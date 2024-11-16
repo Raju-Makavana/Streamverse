@@ -1,0 +1,205 @@
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Monitor, ChevronRight, Play, Info } from "lucide-react";
+import { motion } from 'framer-motion';
+import image from "../assets/stranger.png";
+
+const TVShowsPage = () => {
+  const [selectedShow, setSelectedShow] = useState(null);
+
+  const featuredShow = {
+    title: "Breaking Bad",
+    description: "A high school chemistry teacher turned methamphetamine manufacturer partners with a former student to secure his family's financial future as he battles terminal lung cancer.",
+    imageUrl: image,
+    rating: "98% Match",
+    year: "2008",
+    seasons: "5 Seasons",
+    genre: "Crime Drama"
+  };
+
+  const tvCategories = [
+    {
+      title: "Popular TV Shows",
+      items: Array(10).fill(null).map((_, i) => ({
+        id: i,
+        title: `Popular Show ${i + 1}`,
+        imageUrl: image,
+        rating: "96% Match",
+        synopsis: "An exciting new series that captivates audiences worldwide.",
+        year: "2024",
+        seasons: `${Math.floor(Math.random() * 5 + 1)} Seasons`
+      }))
+    },
+    {
+      title: "Award-Winning Series",
+      items: Array(10).fill(null).map((_, i) => ({
+        id: i,
+        title: `Award Winner ${i + 1}`,
+        imageUrl:image,
+        rating: "98% Match",
+        synopsis: "Critics' favorite series that's winning hearts and awards.",
+        year: "2023",
+        seasons: `${Math.floor(Math.random() * 8 + 1)} Seasons`
+      }))
+    }
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { duration: 0.3 }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section with Parallax Effect */}
+      <motion.div 
+        className="relative h-[70vh] w-full overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
+        <div className="absolute inset-0 scale-105">
+          <motion.img
+            src={featuredShow.imageUrl}
+            alt={featuredShow.title}
+            className="w-full h-full object-cover"
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <motion.div 
+          className="absolute bottom-0 left-0 right-0 p-8 space-y-4"
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <div className="space-y-2">
+            <h1 className="text-5xl md:text-7xl font-bold">{featuredShow.title}</h1>
+            <div className="flex items-center space-x-2">
+              <Badge variant="secondary">{featuredShow.rating}</Badge>
+              <Badge>{featuredShow.year}</Badge>
+              <Badge>{featuredShow.seasons}</Badge>
+              <Badge>{featuredShow.genre}</Badge>
+            </div>
+            <p className="text-lg max-w-2xl">{featuredShow.description}</p>
+          </div>
+          <div className="flex space-x-4">
+            <Button 
+              size="lg" 
+              className="group hover:scale-105 transition-all duration-300"
+            >
+              <Play className="mr-2 h-5 w-5 group-hover:animate-pulse" /> 
+              Play
+            </Button>
+            <Button 
+              size="lg" 
+              variant="secondary"
+              className="group hover:scale-105 transition-all duration-300"
+            >
+              <Info className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform duration-300" /> 
+              More Info
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Content Sections */}
+      <motion.div 
+        className="px-4 md:px-8 space-y-12 py-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="flex items-center space-x-4">
+          <Monitor className="h-8 w-8" />
+          <h1 className="text-4xl font-bold">TV Shows</h1>
+        </div>
+
+        {tvCategories.map((category, index) => (
+          <motion.div 
+            key={index} 
+            className="space-y-4"
+            variants={itemVariants}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">{category.title}</h2>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="group hover:scale-105 transition-all duration-300"
+              >
+                See All 
+                <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+              </Button>
+            </div>
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex space-x-4 pb-4">
+                {category.items.map((item, itemIndex) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: itemIndex * 0.1 }}
+                    whileHover={{ scale: 1.05, zIndex: 1 }}
+                    className="relative"
+                  >
+                    <Card 
+                      className="w-[250px] shrink-0 cursor-pointer overflow-hidden"
+                      onMouseEnter={() => setSelectedShow(item)}
+                      onMouseLeave={() => setSelectedShow(null)}
+                    >
+                      <div className="relative aspect-[2/3]">
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title}
+                          className="object-cover w-full h-full transition-transform duration-300 hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
+                          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
+                            <Badge className="mb-2">{item.rating}</Badge>
+                            <h3 className="font-semibold text-white">{item.title}</h3>
+                            <div className="flex space-x-2">
+                              <Badge variant="outline">{item.year}</Badge>
+                              <Badge variant="outline">{item.seasons}</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+              <ScrollBar 
+                orientation="horizontal" 
+                className="hover:bg-primary/20 transition-colors duration-300"
+              />
+            </ScrollArea>
+          </motion.div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
+export default TVShowsPage;
