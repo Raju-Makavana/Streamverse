@@ -476,6 +476,7 @@ export const getWatchLaterList = async () => {
   }
 };
 
+
 export const addToFavorites = async (mediaId) => {
   try {
     const response = await axios.post(`${url}/user/favorites/add`, { mediaId }, jsonconfig);
