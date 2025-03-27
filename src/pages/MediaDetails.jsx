@@ -23,7 +23,8 @@ import {
   Favorite,
   FavoriteBorder,
   Bookmark,
-  BookmarkBorder
+  BookmarkBorder,
+  ThumbUp
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -38,8 +39,10 @@ import {
   removeFromFavorites,
   checkMediaInUserLists
 } from '../apis/mediaApis';
+import { addLike, removeLike, checkLikeStatus, getLikeCount } from '../apis/likeApis';
 import CustomLoader from '../components/CustomLoader';
 import AuthDialog from '../components/AuthDialog';
+import { styled } from '@mui/material/styles';
 
 const MediaDetailsPage = () => {
   const navigate = useNavigate();
@@ -59,6 +62,8 @@ const MediaDetailsPage = () => {
   });
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authDialogMessage, setAuthDialogMessage] = useState('');
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0); 
@@ -68,6 +73,9 @@ const MediaDetailsPage = () => {
     fetchModiaDetails();
     if (isAuthenticated) {
       checkUserLists();
+    }
+    if (mediaId) {
+      fetchLikeInfo();
     }
   }, [mediaId, isAuthenticated]);
 
@@ -107,6 +115,21 @@ const MediaDetailsPage = () => {
       }
     } catch (error) {
       console.error('Error checking user lists:', error);
+    }
+  };
+
+  const fetchLikeInfo = async () => {
+    const [likeStatusRes, likeCountRes] = await Promise.all([
+      isAuthenticated ? checkLikeStatus(mediaId) : { success: false, isLiked: false },
+      getLikeCount(mediaId)
+    ]);
+
+    if (likeStatusRes.success) {
+      setIsLiked(likeStatusRes.isLiked);
+    }
+
+    if (likeCountRes.success) {
+      setLikeCount(likeCountRes.count);
     }
   };
 
@@ -189,6 +212,48 @@ const MediaDetailsPage = () => {
       setFeedback({
         open: true,
         message: 'Failed to update Favorites',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!isAuthenticated) {
+      setAuthDialogMessage('Please login to like this content');
+      setShowAuthDialog(true);
+      return;
+    }
+    
+    try {
+      let response;
+      if (isLiked) {
+        response = await removeLike(mediaId);
+        if (response.success) {
+          setIsLiked(false);
+          setLikeCount(prev => Math.max(0, prev - 1));
+          setFeedback({
+            open: true,
+            message: 'Removed from Likes',
+            severity: 'success'
+          });
+        }
+      } else {
+        response = await addLike(mediaId);
+        if (response.success) {
+          setIsLiked(true);
+          setLikeCount(prev => prev + 1);
+          setFeedback({
+            open: true,
+            message: 'Added to Likes',
+            severity: 'success'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      setFeedback({
+        open: true,
+        message: 'Failed to update like status',
         severity: 'error'
       });
     }
@@ -397,20 +462,25 @@ const MediaDetailsPage = () => {
             </Tooltip>
             
             <Tooltip title={userLists.inFavorites ? "Remove from Favorites" : "Add to Favorites"}>
-              <IconButton
+              <Button
+                variant={userLists.inFavorites ? "contained" : "outlined"}
+                startIcon={<Favorite />}
                 onClick={handleToggleFavorites}
-                sx={{
-                  color: userLists.inFavorites ? 'primary.main' : 'white',
-                  border: '1px solid',
-                  borderColor: userLists.inFavorites ? 'primary.main' : 'white',
-                  '&:hover': {
-                    bgcolor: 'rgba(229,9,20,0.1)',
-                  },
-                  p: 1.5,
-                }}
+                color="error"
               >
-                {userLists.inFavorites ? <Favorite /> : <FavoriteBorder />}
-              </IconButton>
+                {userLists.inFavorites ? "Remove from Favorites" : "Add to Favorites"}
+              </Button>
+            </Tooltip>
+            
+            <Tooltip title="Like">
+              <Button
+                variant={isLiked ? "contained" : "outlined"}
+                startIcon={<ThumbUp />}
+                onClick={handleToggleLike}
+                color="primary"
+              >
+                {isLiked ? "Unlike" : "Like"} ({likeCount})
+              </Button>
             </Tooltip>
             
             <Tooltip title="Share">
@@ -481,78 +551,137 @@ const MediaDetailsPage = () => {
 
       {/* Similar Media */}
       <Container sx={{ py: 6 }}>
-        <Typography variant="h4" color="white" sx={{ 
-          mb: 4, 
-          fontWeight: 'bold',
-          borderLeft: '4px solid',
-          borderColor: 'primary.main',
-          pl: 2
-        }}>
+        <Typography 
+          variant="h4" 
+          color="white" 
+          sx={{ 
+            mb: 4, 
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            '&::before': {
+              content: '""',
+              width: 4,
+              height: 32,
+              backgroundColor: 'primary.main',
+              borderRadius: 2,
+            }
+          }}
+        >
           More Like This
         </Typography>
         <Grid container spacing={3}>
           {relatedMedia.length > 0 ? (
             relatedMedia.map((item) => (
-              <Grid item xs={12} sm={6} md={4} lg={2} key={item._id}>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={item._id}>
                 <motion.div 
                   whileHover={{ 
-                    scale: 1.05,
+                    scale: 1.02,
                     transition: { duration: 0.2 }
                   }}
                 >
-                  <Card
-                    sx={{
-                      bgcolor: 'transparent',
-                      cursor: 'pointer',
-                      boxShadow: 'none',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      '&:hover': {
-                        '& .MuiCardMedia-root': {
-                          transform: 'scale(1.05)'
-                        }
-                      }
-                    }}
-                    onClick={() => navigate(`/media/${item._id}`)}
-                  >
+                  <MediaCard onClick={() => navigate(`/media/${item._id}`)}>
                     <CardMedia
                       component="img"
-                      height="300"
                       image={getMediaUrl(item.posterUrl, 'poster')}
                       alt={item.title}
-                      sx={{
-                        borderRadius: 1,
+                      sx={{ 
+                        aspectRatio: '16/9',
+                        objectFit: 'cover',
                         transition: 'transform 0.3s ease'
                       }}
                     />
-                    <CardContent sx={{ bgcolor: 'transparent', px: 0 }}>
+                    <CardOverlay className="card-overlay">
+                      <IconButton
+                        sx={{
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': { bgcolor: 'primary.dark' },
+                          width: 48,
+                          height: 48,
+                        }}
+                      >
+                        <PlayArrow sx={{ fontSize: 32 }} />
+                      </IconButton>
+                    </CardOverlay>
+                    <CardContent 
+                      className="card-content"
+                      sx={{ 
+                        flexGrow: 1,
+                        p: 2,
+                        transition: 'transform 0.3s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1
+                      }}
+                    >
                       <Typography 
                         variant="subtitle1" 
-                        color="white"
+                        noWrap 
+                        fontWeight="bold"
                         sx={{ 
-                          fontWeight: 'medium',
+                          fontSize: '1rem',
+                          lineHeight: 1.4,
                           mb: 0.5,
+                          color: 'text.primary'
                         }}
                       >
                         {item.title}
                       </Typography>
-                      {item.imdb?.rating && (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Star sx={{ color: '#ffd700', mr: 0.5, fontSize: '1rem' }} />
-                          <Typography variant="body2" color="white">
-                            {item.imdb.rating}/10
-                          </Typography>
-                        </Box>
-                      )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {item.imdb?.rating && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Star sx={{ color: '#ffd700', fontSize: '1rem', mr: 0.5 }} />
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary"
+                              sx={{ 
+                                fontSize: '0.875rem',
+                                opacity: 0.7
+                              }}
+                            >
+                              {item.imdb.rating}
+                            </Typography>
+                          </Box>
+                        )}
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ 
+                            fontSize: '0.875rem',
+                            opacity: 0.7
+                          }}
+                        >
+                          {item.year}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ 
+                            fontSize: '0.875rem',
+                            opacity: 0.7
+                          }}
+                        >
+                          {item.runtime} min
+                        </Typography>
+                      </Box>
                     </CardContent>
-                  </Card>
+                  </MediaCard>
                 </motion.div>
               </Grid>
             ))
           ) : (
             <Grid item xs={12}>
-              <Typography color="text.secondary" align="center">
-                No related content found
+              <Typography 
+                variant="body1" 
+                color="text.secondary"
+                sx={{ 
+                  textAlign: 'center',
+                  py: 4
+                }}
+              >
+                No similar content found
               </Typography>
             </Grid>
           )}
@@ -582,5 +711,43 @@ const MediaDetailsPage = () => {
     </Box>
   );
 };
+
+const MediaCard = styled(Card)(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius * 1.5,
+  overflow: 'hidden',
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: '0 6px 16px rgba(0,0,0,0.1)',
+  transition: 'all 0.3s ease',
+  cursor: 'pointer',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  '&:hover': {
+    transform: 'translateY(-8px)',
+    boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
+    '& .card-overlay': {
+      opacity: 1,
+    },
+    '& .card-content': {
+      transform: 'translateY(-4px)',
+    },
+  },
+}));
+
+const CardOverlay = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0,0,0,0.6)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  opacity: 0,
+  transition: 'opacity 0.3s ease',
+  zIndex: 1,
+}));
 
 export default MediaDetailsPage;

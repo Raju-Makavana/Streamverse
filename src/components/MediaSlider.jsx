@@ -25,8 +25,130 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { getEnvConfig } from '../config/envConfig';
+import styled from '@emotion/styled';
 
 const url = getEnvConfig.get("backendURI");
+
+// Add styled components for better organization and reusability
+const SliderContainer = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  width: '100%',
+  overflow: 'hidden',
+  padding: theme.spacing(4, 0),
+  '&:hover .slider-nav': {
+    opacity: 1,
+  },
+}));
+
+const SliderTitle = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  fontWeight: 600,
+  fontSize: '1.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  color: theme.palette.common.white,
+  '&::before': {
+    content: '""',
+    width: 4,
+    height: 24,
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: 2,
+  },
+}));
+
+const SliderWrapper = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  gap: theme.spacing(2),
+}));
+
+const SliderCard = styled(motion.div)(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius * 2,
+  overflow: 'hidden',
+  cursor: 'pointer',
+  height: '100%',
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+  '&:hover': {
+    '& .card-overlay': {
+      opacity: 1,
+    },
+    '& .card-content': {
+      transform: 'translateY(0)',
+    },
+  },
+}));
+
+const CardImage = styled('img')({
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  aspectRatio: '16/9',
+  display: 'block',
+});
+
+const CardOverlay = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)',
+  opacity: 0,
+  transition: 'opacity 0.3s ease',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-end',
+  padding: theme.spacing(2),
+}));
+
+const CardActions = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+}));
+
+const ActionButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.common.white,
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  width: 36,
+  height: 36,
+}));
+
+const CardContent = styled(Box)(({ theme }) => ({
+  transform: 'translateY(100%)',
+  transition: 'transform 0.3s ease',
+  color: theme.palette.common.white,
+}));
+
+const SliderNavButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  backgroundColor: 'rgba(0,0,0,0.7)',
+  color: theme.palette.common.white,
+  zIndex: 2,
+  opacity: 0,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: theme.palette.primary.main,
+  },
+  '&.Mui-disabled': {
+    opacity: 0.5,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  '&.prev': {
+    left: theme.spacing(2),
+  },
+  '&.next': {
+    right: theme.spacing(2),
+  },
+}));
 
 const MediaSlider = ({ title, items = [], sx = {} }) => {
   const navigate = useNavigate();
@@ -260,254 +382,138 @@ const MediaSlider = ({ title, items = [], sx = {} }) => {
   );
 
   return (
-    <Box sx={{ 
-      mb: 6, 
-      position: 'relative',
-      width: '100%',
-      maxWidth: '100%',
-      overflow: 'visible',
-      ...sx
-    }}>
-      <Typography 
-        variant="h5" 
-        sx={{ 
-          mb: 3, 
-          fontWeight: 'bold', 
-          color: 'white',
-          pl: { xs: 2, sm: 4 }
-        }}
-      >
+    <SliderContainer sx={sx}>
+      <SliderTitle variant="h5">
         {title}
-      </Typography>
+      </SliderTitle>
       
-      <Box sx={{ 
-        position: 'relative', 
-        px: { xs: 2, sm: 4 },
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'visible'
-      }}>
-        {items.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            {canShowPrev && (
-              <IconButton
-                onClick={prevSlide}
-                sx={{
-                  position: 'absolute',
-                  left: { xs: -5, sm: 0 },
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 10,
-                  color: 'white',
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  '&:hover': {
-                    backgroundColor: theme.palette.primary.dark,
-                  }
-                }}
+      {items.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <>
+          <SliderWrapper
+            sx={{
+              transform: `translateX(-${currentIndex * (100 / itemsPerSlide)}%)`,
+            }}
+          >
+            {items.map((item, index) => (
+              <SliderCard
+                key={item._id}
+                onClick={() => handleCardClick(item._id)}
+                whileHover={{ scale: 1.02 }}
+                style={{ flex: `0 0 ${100 / itemsPerSlide}%` }}
               >
-                <ChevronLeft />
-              </IconButton>
-            )}
-
-            <Box sx={{ 
-              display: 'flex',
-              overflow: 'hidden',
-              width: '100%',
-              maxWidth: '100%',
-              pb: 5 // Add space for expanded cards
-            }}>
-              <Box sx={{
-                display: 'flex',
-                gap: 1,
-                transition: 'transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1)',
-                transform: `translateX(-${currentIndex * (100/itemsPerSlide)}%)`,
-                width: '100%',
-                maxWidth: '100%'
-              }}>
-                {items.map((item, index) => (
-                  <Box
-                    key={item._id || index}
-                    component={motion.div}
-                    initial={false}
-                    whileHover={{ 
-                      scale: 1.2, 
-                      zIndex: 5,
-                      transition: { duration: 0.3 } 
-                    }}
-                    onHoverStart={() => setHoveredIndex(index)}
-                    onHoverEnd={() => setHoveredIndex(null)}
-                    onClick={() => handleCardClick(item._id)}
-                    sx={{
-                      flex: `0 0 calc(${100/itemsPerSlide}% - 8px)`,
-                      minWidth: `calc(${100/itemsPerSlide}% - 8px)`,
-                      position: 'relative',
-                      aspectRatio: '16/9',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      bgcolor: '#1a1a1a',
-                      boxShadow: hoveredIndex === index ? '0 10px 20px rgba(0,0,0,0.4)' : 'none',
-                      transition: 'box-shadow 0.3s ease',
-                    }}
-                  >
-                    <Box
-                      component="img"
-                      src={getMediaUrl(item.posterUrl, 'poster') || getMediaUrl(item.thumbnailUrl, 'thumbnail')}
-                      alt={item.title}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/placeholder-poster.jpg';
-                      }}
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        transition: 'all 0.3s ease'
-                      }}
-                    />
-                    
-                    <AnimatePresence>
-                      {hoveredIndex === index && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            padding: '30px 10px 10px',
-                            background: 'linear-gradient(transparent, rgba(0,0,0,0.9) 40%)',
-                            zIndex: 2
-                          }}
-                        >
-                          <Typography variant="subtitle1" sx={{ 
-                            fontWeight: 'bold',
-                            marginBottom: '8px'
-                          }}>
-                            {item.title}
+                <CardImage
+                  src={getMediaUrl(item.posterUrl, 'poster')}
+                  alt={item.title}
+                  loading="lazy"
+                />
+                <CardOverlay className="card-overlay">
+                  <CardActions>
+                    <ActionButton
+                      onClick={(e) => handlePlayClick(e, item._id)}
+                      title="Play Now"
+                    >
+                      <PlayArrow />
+                    </ActionButton>
+                    <ActionButton
+                      onClick={(e) => handleFavoriteToggle(e, item._id)}
+                      title={favoriteMediaIds.includes(item._id) ? "Remove from Favorites" : "Add to Favorites"}
+                    >
+                      {favoriteMediaIds.includes(item._id) ? <Favorite /> : <FavoriteBorder />}
+                    </ActionButton>
+                    <ActionButton
+                      onClick={(e) => handleWatchLaterToggle(e, item._id)}
+                      title="Add to Watch Later"
+                    >
+                      <AccessTime />
+                    </ActionButton>
+                    <ActionButton
+                      onClick={(e) => handleInfoClick(e, item._id)}
+                      title="More Info"
+                    >
+                      <Info />
+                    </ActionButton>
+                  </CardActions>
+                  <CardContent className="card-content">
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom noWrap>
+                      {item.title}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      {item.imdb?.rating && (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Star sx={{ color: '#ffd700', fontSize: '0.875rem', mr: 0.5 }} />
+                          <Typography variant="body2">
+                            {item.imdb.rating}
                           </Typography>
-                          
-                          <Box sx={{ display: 'flex', gap: 1 }}>
-                            <IconButton 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: theme.palette.primary.main, 
-                                color: 'white',
-                                '&:hover': { bgcolor: theme.palette.primary.dark }
-                              }}
-                              onClick={(e) => handlePlayClick(e, item._id)}
-                            >
-                              <PlayArrow />
-                            </IconButton>
-                            
-                            <IconButton 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: 'rgba(109, 109, 110, 0.7)', 
-                                color: watchLaterMediaIds.includes(item._id) ? theme.palette.primary.main : 'white',
-                                '&:hover': { bgcolor: 'rgba(109, 109, 110, 0.9)' }
-                              }}
-                              onClick={(e) => handleWatchLaterToggle(e, item._id)}
-                            >
-                              <AccessTime />
-                            </IconButton>
-                            
-                            <IconButton 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: 'rgba(109, 109, 110, 0.7)', 
-                                color: favoriteMediaIds.includes(item._id) ? theme.palette.error.main : 'white',
-                                '&:hover': { bgcolor: 'rgba(109, 109, 110, 0.9)' }
-                              }}
-                              onClick={(e) => handleFavoriteToggle(e, item._id)}
-                            >
-                              {favoriteMediaIds.includes(item._id) ? <Favorite /> : <FavoriteBorder />}
-                            </IconButton>
-                            
-                            <IconButton 
-                              size="small" 
-                              sx={{ 
-                                bgcolor: 'rgba(109, 109, 110, 0.7)', 
-                                color: 'white',
-                                '&:hover': { bgcolor: 'rgba(109, 109, 110, 0.9)' }
-                              }}
-                              onClick={(e) => handleInfoClick(e, item._id)}
-                            >
-                              <Info />
-                            </IconButton>
-                            
-                            {item.imdb?.rating && (
-                              <Box sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: 0.5,
-                                ml: 'auto',
-                                color: 'white'
-                              }}>
-                                <Star sx={{ fontSize: 16, color: 'yellow' }} />
-                                <Typography variant="caption">
-                                  {item.imdb.rating}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                          
-                          {item.genre && (
-                            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#ddd' }}>
-                              {Array.isArray(item.genre) ? item.genre.join(', ') : item.genre}
-                            </Typography>
-                          )}
-                        </motion.div>
+                        </Box>
                       )}
-                    </AnimatePresence>
-                  </Box>
-                ))}
-              </Box>
-            </Box>
+                      <Typography variant="body2">
+                        {item.year}
+                      </Typography>
+                      <Typography variant="body2">
+                        {item.runtime} min
+                      </Typography>
+                    </Box>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        opacity: 0.8
+                      }}
+                    >
+                      {item.plot}
+                    </Typography>
+                  </CardContent>
+                </CardOverlay>
+              </SliderCard>
+            ))}
+          </SliderWrapper>
 
-            {canShowNext && (
-              <IconButton
-                onClick={nextSlide}
-                sx={{
-                  position: 'absolute',
-                  right: { xs: -5, sm: 0 },
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 10,
-                  color: 'white',
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  '&:hover': {
-                    backgroundColor: theme.palette.primary.dark,
-                  }
-                }}
-              >
-                <ChevronRight />
-              </IconButton>
-            )}
-          </>
-        )}
-      </Box>
+          {canShowPrev && (
+            <SliderNavButton
+              onClick={prevSlide}
+              disabled={currentIndex === 0}
+              className="slider-nav prev"
+            >
+              <ChevronLeft />
+            </SliderNavButton>
+          )}
+          
+          {canShowNext && (
+            <SliderNavButton
+              onClick={nextSlide}
+              disabled={currentIndex >= items.length - itemsPerSlide}
+              className="slider-nav next"
+            >
+              <ChevronRight />
+            </SliderNavButton>
+          )}
+        </>
+      )}
 
-      <Snackbar 
-        open={feedback.open} 
-        autoHideDuration={3000} 
+      <Snackbar
+        open={feedback.open}
+        autoHideDuration={3000}
         onClose={closeFeedback}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={closeFeedback} 
-          severity={feedback.severity} 
-          sx={{ width: '100%' }}
+        <Alert
+          onClose={closeFeedback}
+          severity={feedback.severity}
+          variant="filled"
+          sx={{
+            width: '100%',
+            boxShadow: (theme) => theme.shadows[3],
+          }}
         >
           {feedback.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </SliderContainer>
   );
 };
 

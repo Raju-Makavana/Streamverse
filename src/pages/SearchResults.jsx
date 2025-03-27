@@ -39,6 +39,7 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -58,13 +59,14 @@ const SearchResults = () => {
     if (initialQuery) {
       performSearch();
     }
-  }, [initialQuery, page]);
+  }, [initialQuery, page, filters]);
   
   const performSearch = async () => {
     if (!searchQuery.trim()) return;
     
     try {
       setLoading(true);
+      setError(null);
       
       // Update URL with search query
       const searchParams = new URLSearchParams(location.search);
@@ -74,6 +76,7 @@ const SearchResults = () => {
       // Prepare search parameters
       const searchParams2 = {
         query: searchQuery,
+        page,
         limit: 24,
         ...filters
       };
@@ -85,12 +88,17 @@ const SearchResults = () => {
         setRelatedResults(result.related || []);
         setTotalResults(result.count || 0);
       } else {
+        setError(result.error || 'Failed to fetch search results');
         setResults([]);
         setRelatedResults([]);
         setTotalResults(0);
       }
     } catch (error) {
       console.error('Search error:', error);
+      setError('An error occurred while searching');
+      setResults([]);
+      setRelatedResults([]);
+      setTotalResults(0);
     } finally {
       setLoading(false);
     }
@@ -251,143 +259,95 @@ const SearchResults = () => {
       
       {/* Results */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress size={40} color="primary" />
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress />
         </Box>
-      ) : results.length > 0 ? (
-        <>
-          <Typography 
-            variant="h6" 
-            mb={3}
-            sx={{ 
-              display: 'flex',
-              alignItems: 'center',
-              '&::before': {
-                content: '""',
-                width: 5,
-                height: 20,
-                backgroundColor: 'primary.main',
-                marginRight: 1.5,
-                borderRadius: 1
-              }
-            }}
-          >
-            {totalResults} results found for "{searchQuery}"
+      ) : error ? (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography color="error" variant="h6">
+            {error}
           </Typography>
-          
-          <Grid container spacing={3}>
-            {results.map((item) => (
-              <Grid item xs={6} sm={4} md={3} lg={2} key={item._id}>
-                <Card 
-                  component={motion.div}
-                  whileHover={{ 
-                    scale: 1.05,
-                    transition: { duration: 0.2 }
-                  }}
-                  sx={{ 
-                    bgcolor: '#1a1a1a', 
-                    height: '100%',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.03)',
-                    boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
-                    position: 'relative',
-                    '&:hover': {
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
-                      '& .MuiCardMedia-root': {
-                        transform: 'scale(1.05)'
-                      }
-                    }
-                  }}
-                  onClick={() => handleMediaClick(item._id)}
-                >
-                  <CardMedia
-                    component="img"
-                    height={240}
-                    image={getMediaUrl(item.posterUrl, 'poster')}
-                    alt={item.title}
-                    sx={{ 
-                      objectFit: 'cover',
-                      transition: 'transform 0.3s ease'
-                    }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="subtitle1" component="div" noWrap>
-                      {item.title}
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
-                      {item.type === 'movie' ? (
-                        <Movie fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
-                      ) : (
-                        <Tv fontSize="small" sx={{ mr: 1, opacity: 0.7 }} />
-                      )}
-                      <Typography variant="body2" color="text.secondary">
-                        {item.year} • {item.type}
-                      </Typography>
-                    </Box>
-                    
-                    {item.genres && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
-                        {item.genres.slice(0, 2).map((genre, idx) => (
-                          <Chip 
-                            key={idx} 
-                            label={genre} 
-                            size="small"
-                            sx={{ 
-                              height: 20, 
-                              fontSize: '0.7rem',
-                              bgcolor: 'rgba(255,255,255,0.1)'
-                            }}
-                          />
-                        ))}
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          
-          {totalResults > 24 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-              <Pagination 
-                count={Math.ceil(totalResults / 24)} 
-                page={page}
-                onChange={(e, value) => setPage(value)}
-                color="primary"
-              />
-            </Box>
-          )}
-          
-          {/* Related Suggestions */}
-          {relatedResults.length > 0 && (
-            <Box mt={6}>
-              <Divider sx={{ mb: 3, opacity: 0.3 }} />
-              <Typography 
-                variant="h6" 
-                mb={3}
-                sx={{ 
-                  display: 'flex',
-                  alignItems: 'center',
-                  '&::before': {
-                    content: '""',
-                    width: 5,
-                    height: 20,
-                    backgroundColor: 'primary.main',
-                    marginRight: 1.5,
-                    borderRadius: 1
-                  }
-                }}
-              >
-                You may also like
+        </Box>
+      ) : (
+        <>
+          {results.length > 0 && (
+            <>
+              <Typography variant="h5" color="white" mb={3}>
+                Search Results ({totalResults})
               </Typography>
+              <Grid container spacing={3}>
+                {results.map((media) => (
+                  <Grid item xs={6} sm={4} md={3} lg={2} key={media._id}>
+                    <Card 
+                      component={motion.div}
+                      whileHover={{ 
+                        scale: 1.05,
+                        transition: { duration: 0.2 }
+                      }}
+                      sx={{ 
+                        bgcolor: '#1a1a1a', 
+                        height: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.03)',
+                        boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
+                        position: 'relative',
+                        '&:hover': {
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+                          '& .MuiCardMedia-root': {
+                            transform: 'scale(1.05)'
+                          }
+                        }
+                      }}
+                      onClick={() => handleMediaClick(media._id)}
+                    >
+                      <CardMedia
+                        component="img"
+                        height="300"
+                        image={getMediaUrl(media.thumbnail)}
+                        alt={media.title}
+                        sx={{ 
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                      <CardContent>
+                        <Typography variant="subtitle1" noWrap>
+                          {media.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {media.year}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
               
-              <Grid container spacing={2}>
-                {relatedResults.slice(0, 6).map((item) => (
-                  <Grid item xs={6} sm={4} md={2} key={item._id}>
+              {totalResults > 24 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination
+                    count={Math.ceil(totalResults / 24)}
+                    page={page}
+                    onChange={(e, value) => setPage(value)}
+                    color="primary"
+                    size="large"
+                  />
+                </Box>
+              )}
+            </>
+          )}
+
+          {relatedResults.length > 0 && (
+            <Box sx={{ mt: 6 }}>
+              <Typography variant="h5" color="white" mb={3}>
+                Related Content
+              </Typography>
+              <Grid container spacing={3}>
+                {relatedResults.map((media) => (
+                  <Grid item xs={6} sm={4} md={3} lg={2} key={media._id}>
                     <Card 
                       component={motion.div}
                       whileHover={{ scale: 1.05 }}
@@ -395,17 +355,20 @@ const SearchResults = () => {
                         bgcolor: '#1a1a1a', 
                         cursor: 'pointer'
                       }}
-                      onClick={() => handleMediaClick(item._id)}
+                      onClick={() => handleMediaClick(media._id)}
                     >
                       <CardMedia
                         component="img"
-                        height={180}
-                        image={getMediaUrl(item.posterUrl, 'poster')}
-                        alt={item.title}
+                        height="300"
+                        image={getMediaUrl(media.thumbnail)}
+                        alt={media.title}
                       />
-                      <CardContent sx={{ py: 1 }}>
-                        <Typography variant="body2" noWrap>
-                          {item.title}
+                      <CardContent>
+                        <Typography variant="subtitle1" noWrap>
+                          {media.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {media.year}
                         </Typography>
                       </CardContent>
                     </Card>
@@ -414,16 +377,15 @@ const SearchResults = () => {
               </Grid>
             </Box>
           )}
+
+          {!loading && results.length === 0 && !error && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="text.secondary">
+                No results found for "{searchQuery}"
+              </Typography>
+            </Box>
+          )}
         </>
-      ) : (
-        !loading && initialQuery && (
-          <Box sx={{ py: 8, textAlign: 'center' }}>
-            <Typography variant="h6">No results found for "{searchQuery}"</Typography>
-            <Typography variant="body1" color="text.secondary" mt={1}>
-              Try adjusting your search terms or filters
-            </Typography>
-          </Box>
-        )
       )}
     </Container>
   );

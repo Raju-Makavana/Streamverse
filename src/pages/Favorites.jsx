@@ -62,7 +62,7 @@ const Favorites = () => {
     try {
       const response = await removeFromFavorites(mediaId);
       if (response.success) {
-        setFavorites(favorites.filter(item => item._id !== mediaId));
+        setFavorites(favorites.filter(item => item.media._id !== mediaId));
         setFeedback({
           open: true,
           message: 'Removed from favorites',
@@ -153,7 +153,7 @@ const Favorites = () => {
       ) : favorites.length > 0 ? (
         <Grid container spacing={3}>
           {favorites.map((item) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={item._id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={item.media._id}>
               <Card 
                 component={motion.div}
                 whileHover={{ 
@@ -176,8 +176,8 @@ const Favorites = () => {
                   <CardMedia
                     component="img"
                     height={320}
-                    image={getMediaUrl(item.posterUrl, 'poster')}
-                    alt={item.title}
+                    image={getMediaUrl(item.media.posterUrl, 'poster')}
+                    alt={item.media.title}
                     sx={{ 
                       borderRadius: '8px 8px 0 0',
                       transition: 'transform 0.3s ease'
@@ -208,7 +208,7 @@ const Favorites = () => {
                         variant="contained"
                         color="primary"
                         startIcon={<PlayArrow />}
-                        onClick={() => handlePlayClick(item._id)}
+                        onClick={() => handlePlayClick(item.media._id)}
                       >
                         Play
                       </Button>
@@ -216,17 +216,17 @@ const Favorites = () => {
                         variant="outlined"
                         color="secondary"
                         startIcon={<Info />}
-                        onClick={() => handleDetailsClick(item._id)}
+                        onClick={() => handleDetailsClick(item.media._id)}
                         sx={{ borderColor: 'white', color: 'white' }}
                       >
                         Details
                       </Button>
                     </Box>
                     <Typography variant="body2" textAlign="center" sx={{ mb: 2 }}>
-                      {item.plot?.substring(0, 100)}...
+                      {item.media.plot?.substring(0, 100)}...
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      {item.genres?.slice(0, 3).map((genre, idx) => (
+                      {item.media.genres?.slice(0, 3).map((genre, idx) => (
                         <Box 
                           key={idx} 
                           sx={{ 
@@ -258,7 +258,7 @@ const Favorites = () => {
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemoveFromFavorites(item._id);
+                      handleRemoveFromFavorites(item.media._id);
                     }}
                   >
                     <Favorite />
@@ -267,10 +267,10 @@ const Favorites = () => {
                 
                 <CardContent>
                   <Typography variant="h6" component="div" noWrap>
-                    {item.title}
+                    {item.media.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {item.year} • {item.type}
+                    {item.media.year} • {item.media.type}
                   </Typography>
                 </CardContent>
               </Card>

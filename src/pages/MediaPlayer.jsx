@@ -35,6 +35,7 @@ import {
   MoreHoriz,
   KeyboardArrowLeft,
   KeyboardArrowRight,
+  CheckCircleOutline,
 } from "@mui/icons-material";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -45,13 +46,13 @@ import { CardMedia } from "@mui/material";
 import { Grid, Paper } from "@mui/material";
 import AuthDialog from "../components/AuthDialog";
 
-const QUALITY_LEVELS = {
-  auto: { label: "Auto", value: "auto" },
-  1080: { label: "1080p (Full HD)", value: "1080p" },
-  720: { label: "720p (HD)", value: "720p" },
-  480: { label: "480p (SD)", value: "480p" },
-  240: { label: "240p (Low)", value: "240p" },
-};
+const QUALITY_LEVELS = [
+  { label: "Auto", value: "auto" },
+  { label: "240p", value: "240p" },
+  { label: "480p", value: "480p" },
+  { label: "720p (HD)", value: "720p" },
+  { label: "1080p (FHD)", value: "1080p" }
+];
 
 const VideoContainer = styled(Box)(({ theme }) => ({
   position: "relative",
@@ -65,19 +66,24 @@ const VideoContainer = styled(Box)(({ theme }) => ({
   boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
   "&:hover .controls": {
     opacity: 1,
+    visibility: "visible",
   },
   "&:fullscreen": {
     width: "100vw",
     height: "100vh",
     borderRadius: 0,
+    "& .controls": {
+      opacity: 1,
+      visibility: "visible",
+    },
   },
   "& video": {
     width: "100% !important", 
     height: "100% !important", 
     objectFit: "contain !important",
     backgroundColor: "#000",
-    minWidth: "100% !important", // Always use 100% width
-    minHeight: "100% !important", // Always use 100% height
+    minWidth: "100% !important",
+    minHeight: "100% !important",
   },
 }));
 
@@ -89,8 +95,17 @@ const Controls = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2, 3, 3),
   background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)",
   opacity: 0,
-  transition: "opacity 0.3s ease-in-out",
-  zIndex: 100, // Ensure controls are above all content
+  visibility: "hidden",
+  transition: "all 0.3s ease-in-out",
+  zIndex: 100,
+  "&:hover": {
+    opacity: 1,
+    visibility: "visible",
+  },
+  "&:fullscreen &": {
+    opacity: 1,
+    visibility: "visible",
+  },
 }));
 
 const MediaInfo = styled(Box)(({ theme }) => ({
@@ -200,14 +215,28 @@ const MediaSlider = styled(Box)(({ theme }) => ({
     marginBottom: theme.spacing(2),
     color: theme.palette.text.primary,
     fontWeight: 600,
+    fontSize: "1.5rem",
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    "&::before": {
+      content: '""',
+      width: 4,
+      height: 24,
+      backgroundColor: theme.palette.primary.main,
+      borderRadius: 2,
+    },
   },
   "& .slider-container": {
     position: "relative",
     overflow: "hidden",
+    margin: theme.spacing(0, -2),
+    padding: theme.spacing(0, 2),
   },
   "& .slider-wrapper": {
     display: "flex",
     transition: "transform 0.3s ease-in-out",
+    gap: theme.spacing(2),
   },
 }));
 
@@ -218,15 +247,20 @@ const MediaCard = styled(Card)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   boxShadow: "0 6px 16px rgba(0,0,0,0.1)",
   transition: "all 0.3s ease",
+  cursor: "pointer",
   "&:hover": {
-    transform: "translateY(-10px)",
+    transform: "translateY(-8px)",
     boxShadow: "0 12px 20px rgba(0,0,0,0.15)",
     "& .card-overlay": {
       opacity: 1,
     },
+    "& .card-content": {
+      transform: "translateY(-4px)",
+    },
   },
   height: "100%",
-  cursor: "pointer",
+  display: "flex",
+  flexDirection: "column",
 }));
 
 const CardOverlay = styled(Box)(({ theme }) => ({
@@ -241,6 +275,7 @@ const CardOverlay = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   opacity: 0,
   transition: "opacity 0.3s ease",
+  zIndex: 1,
 }));
 
 const SliderNavButton = styled(IconButton)(({ theme }) => ({
@@ -255,6 +290,10 @@ const SliderNavButton = styled(IconButton)(({ theme }) => ({
   },
   width: 40,
   height: 40,
+  "&.Mui-disabled": {
+    opacity: 0.5,
+    cursor: "not-allowed",
+  },
 }));
 
 // Custom styled menu for quality selection
@@ -266,15 +305,18 @@ const QualityMenu = styled(Menu)(({ theme }) => ({
     boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
     border: "1px solid rgba(255, 255, 255, 0.1)",
     color: "white",
-    minWidth: "180px",
-    maxWidth: "90vw", // Ensure it fits on small screens
+    minWidth: "240px",
+    maxWidth: "90vw",
+    zIndex: 99999,
+    padding: theme.spacing(1),
   },
   "& .MuiList-root": {
-    padding: theme.spacing(1),
+    padding: 0,
   },
   "& .MuiMenuItem-root": {
     borderRadius: theme.shape.borderRadius,
     margin: "4px 0",
+    padding: "8px 16px",
     "&:hover": {
       backgroundColor: "rgba(255, 255, 255, 0.1)",
     },
@@ -284,6 +326,36 @@ const QualityMenu = styled(Menu)(({ theme }) => ({
         backgroundColor: "rgba(255, 255, 255, 0.2)",
       },
     },
+  },
+}));
+
+// Add new styled components for YouTube-like quality menu
+const QualityHeader = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1, 2),
+  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+  marginBottom: theme.spacing(1),
+}));
+
+const QualityOption = styled(MenuItem)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  padding: "8px 16px",
+  "& .quality-label": {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+  },
+  "& .quality-icon": {
+    color: "#90CAF9",
+    marginRight: theme.spacing(1),
+  },
+  "& .quality-badge": {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    padding: "2px 8px",
+    borderRadius: "12px",
+    fontSize: "0.75rem",
+    color: "rgba(255, 255, 255, 0.7)",
   },
 }));
 
@@ -316,7 +388,7 @@ function MediaPlayer() {
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hideControls, setHideControls] = useState(false);
-  const [qualityLevels, setQualityLevels] = useState([]);
+  const [qualityLevels, setQualityLevels] = useState(QUALITY_LEVELS);
   const [currentQuality, setCurrentQuality] = useState("auto");
   const [settingsAnchorEl, setSettingsAnchorEl] = useState(null);
   const [showInfo, setShowInfo] = useState(false);
@@ -331,6 +403,8 @@ function MediaPlayer() {
   
   const historyUpdateInterval = useRef(null);
   const lastUpdateTime = useRef(0);
+  
+  const settingsButtonRef = useRef(null);
   
   // Resize handler for responsive design
   useEffect(() => {
@@ -486,10 +560,10 @@ function MediaPlayer() {
           startLevel: -1,
           autoLevelCapping: -1,
           capLevelToPlayerSize: true,
-          manifestLoadingTimeOut: 15000, // Increased timeout
-          manifestLoadingMaxRetry: 5,    // Increased retries
-          levelLoadingTimeOut: 15000,    // Increased timeout
-          levelLoadingMaxRetry: 5,       // Increased retries
+          manifestLoadingTimeOut: 15000,
+          manifestLoadingMaxRetry: 5,
+          levelLoadingTimeOut: 15000,
+          levelLoadingMaxRetry: 5,
         });
   
         hlsInstanceRef.current = hls;
@@ -498,49 +572,29 @@ function MediaPlayer() {
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
           console.log("HLS Manifest Parsed:", data);
           const levels = data.levels;
-          const availableQualities = ["auto"];
-
-          // Map bitrates to standard resolution names
-          const bitrateToResolution = {
-            500000: "240p",
-            1500000: "480p",
-            3000000: "720p",
-            5000000: "1080p",
-          };
-
-          // Extract available qualities from levels
-          levels.forEach((level) => {
-            if (level.bitrate && bitrateToResolution[level.bitrate]) {
-              availableQualities.push(bitrateToResolution[level.bitrate]);
-            }
+          
+          // Map available qualities from levels
+          const availableQualities = QUALITY_LEVELS.filter(quality => {
+            if (quality.value === "auto") return true;
+            
+            const height = parseInt(quality.value);
+            return levels.some(level => level.height <= height);
           });
 
-          // Make sure we have unique values
-          const uniqueQualities = [...new Set(availableQualities)];
-
-          setQualityLevels(uniqueQualities);
-          setCurrentQuality(uniqueQualities[0]);
+          setQualityLevels(availableQualities);
+          setCurrentQuality("auto");
           
           // Force maintain video dimensions
           forceVideoDimensions();
         });
 
-        // Add this after parsing the manifest
-        const forcedQualities = ["auto", "240p", "480p", "720p", "1080p"];
-        setQualityLevels(forcedQualities);
-        setCurrentQuality(forcedQualities[0]);
-
         // Handle level switching
         hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
           const currentLevel = data.level;
-          const quality =
-            currentLevel === -1
-              ? "auto"
-              : hls.levels[currentLevel]?.height ? hls.levels[currentLevel].height + "p" : "auto";
-
-          setCurrentQuality(quality);
+          const quality = currentLevel === -1 ? "auto" : 
+            `${hls.levels[currentLevel]?.height || "auto"}p`;
           
-          // Force maintain video dimensions after quality change
+          setCurrentQuality(quality);
           forceVideoDimensions();
         });
 
@@ -687,8 +741,7 @@ function MediaPlayer() {
   };
 
   const handleSettingsClick = (event) => {
-    // Important: Save the reference to the button DOM element
-    settingsAnchorEl.current = event.currentTarget;
+    event.stopPropagation(); // Prevent event bubbling
     setSettingsAnchorEl(event.currentTarget);
   };
 
@@ -699,40 +752,40 @@ function MediaPlayer() {
     }
 
     setSettingsAnchorEl(null);
+    setBuffering(true);
 
     // Store current playback state
     const currentTime = videoRef.current?.currentTime || 0;
     const wasPlaying = isPlaying;
-
-    // Set buffering state while changing quality
-    setBuffering(true);
 
     if (hlsInstanceRef.current) {
       if (quality === "auto") {
         hlsInstanceRef.current.currentLevel = -1;
         hlsInstanceRef.current.nextLevel = -1;
       } else {
-        // Find level index that corresponds to the selected quality
+        const targetHeight = parseInt(quality);
         const levels = hlsInstanceRef.current.levels || [];
-        const levelIndex = levels.findIndex(level => {
-          if (quality === "240p" && level.height <= 240) return true;
-          if (quality === "480p" && level.height <= 480 && level.height > 240) return true;
-          if (quality === "720p" && level.height <= 720 && level.height > 480) return true;
-          if (quality === "1080p" && level.height <= 1080 && level.height > 720) return true;
-          return false;
+        
+        // Find the best matching level
+        let bestLevelIndex = -1;
+        let bestHeight = 0;
+        
+        levels.forEach((level, index) => {
+          if (level.height <= targetHeight && level.height > bestHeight) {
+            bestHeight = level.height;
+            bestLevelIndex = index;
+          }
         });
 
-        if (levelIndex !== -1) {
-          hlsInstanceRef.current.currentLevel = levelIndex;
-          hlsInstanceRef.current.nextLevel = levelIndex;
+        if (bestLevelIndex !== -1) {
+          hlsInstanceRef.current.currentLevel = bestLevelIndex;
+          hlsInstanceRef.current.nextLevel = bestLevelIndex;
         }
       }
 
       // Resume playback at the same position
       if (videoRef.current) {
-        // Force maintain video dimensions
         forceVideoDimensions();
-
         videoRef.current.currentTime = currentTime;
         if (wasPlaying) {
           videoRef.current.play().catch((error) => {
@@ -764,13 +817,20 @@ function MediaPlayer() {
   };
 
   const handleMouseMove = () => {
-    setHideControls(true);
+    setHideControls(false);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
     controlsTimeoutRef.current = setTimeout(() => {
-      setHideControls(false);
+      setHideControls(true);
     }, 3000);
+  };
+
+  const handleMouseLeave = () => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    setHideControls(true);
   };
 
   const handleSliderPrev = () => {
@@ -828,18 +888,18 @@ function MediaPlayer() {
       <VideoContainer
         ref={playerContainerRef}
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHideControls(false)}
+        onMouseLeave={handleMouseLeave}
         onDoubleClick={handleDoubleClick}
       >
         <video
           ref={videoRef}
           style={{
-            width: '100% !important', // Add !important to ensure width is maintained
-            height: '100% !important', // Add !important to ensure height is maintained
+            width: '100% !important',
+            height: '100% !important',
             objectFit: 'contain',
             backgroundColor: '#000',
-            minWidth: '100%', // Add this to ensure minimum width
-            minHeight: '100%', // Add this to ensure minimum height
+            minWidth: '100%',
+            minHeight: '100%',
           }}
           autoPlay
           playsInline
@@ -943,7 +1003,7 @@ function MediaPlayer() {
                 </IconButton>
 
                 <SkipButton onClick={() => handleSkip(10)}>
-                <Forward10 sx={{ color: "white" }} />
+                  <Forward10 sx={{ color: "white" }} />
                 </SkipButton>
 
                 <Box sx={{ flexGrow: 1 }} />
@@ -967,24 +1027,22 @@ function MediaPlayer() {
                     )}
                   </IconButton>
 
-                  <Fade in={!hideControls}>
-                    <Box
-                      sx={{
-                        width: 100,
-                        mx: 1,
-                        display: !hideControls ? "block" : "none",
-                      }}
-                    >
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={muted ? 0 : volume}
-                        onChange={handleVolumeChange}
-                        sx={{ color: "white" }}
-                      />
-                    </Box>
-                  </Fade>
+                  <Box
+                    sx={{
+                      width: 100,
+                      mx: 1,
+                      display: !hideControls ? "block" : "none",
+                    }}
+                  >
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={muted ? 0 : volume}
+                      onChange={handleVolumeChange}
+                      sx={{ color: "white" }}
+                    />
+                  </Box>
                 </Box>
 
                 <Tooltip title="Information">
@@ -997,19 +1055,20 @@ function MediaPlayer() {
                 </Tooltip>
 
                 <IconButton
-                  ref={settingsAnchorEl}
+                  ref={settingsButtonRef}
                   onClick={handleSettingsClick}
-                  sx={{ color: "white" }}
+                  sx={{ 
+                    color: "white",
+                    "&:hover": {
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                    }
+                  }}
                 >
                   <Settings />
                 </IconButton>
 
                 <IconButton onClick={toggleFullscreen} sx={{ color: "white" }}>
-                  {isFullscreen ? (
-                    <FullscreenExit />
-                  ) : (
-                    <Fullscreen />
-                  )}
+                  {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
                 </IconButton>
 
                 <QualityMenu
@@ -1019,47 +1078,60 @@ function MediaPlayer() {
                   onClose={() => setSettingsAnchorEl(null)}
                   anchorOrigin={{
                     vertical: "top",
-                    horizontal: "center",
+                    horizontal: "right",
                   }}
                   transformOrigin={{
                     vertical: "bottom",
-                    horizontal: "center",
+                    horizontal: "right",
                   }}
                   TransitionComponent={Fade}
+                  PaperProps={{
+                    sx: {
+                      position: 'fixed',
+                      top: 'auto',
+                      bottom: 'auto',
+                      left: 'auto',
+                      right: 'auto',
+                      zIndex: 99999,
+                    }
+                  }}
                 >
-                  <Typography
-                    variant="subtitle2"
-                    sx={{
-                      color: "white",
-                      opacity: 0.7,
-                      px: 2,
-                      py: 1,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Quality
-                  </Typography>
-                  {qualityLevels.map((quality) => (
-                    <MenuItem
-                      key={quality}
-                      onClick={() => handleQualityChange(quality)}
-                      selected={currentQuality === quality}
+                  <QualityHeader>
+                    <Typography
+                      variant="subtitle2"
                       sx={{
                         color: "white",
+                        fontWeight: "bold",
                         display: "flex",
-                        justifyContent: "space-between",
-                        "&.Mui-selected": {
-                          backgroundColor: "rgba(255,255,255,0.15)",
-                        },
+                        alignItems: "center",
+                        gap: 1,
                       }}
                     >
-                      {quality}
-                      {currentQuality === quality && (
-                        <Typography variant="caption" sx={{ color: "#90CAF9" }}>
+                      <Settings sx={{ fontSize: 20 }} />
+                      Quality
+                    </Typography>
+                  </QualityHeader>
+                  
+                  {qualityLevels.map((quality) => (
+                    <QualityOption
+                      key={quality.value}
+                      onClick={() => handleQualityChange(quality.value)}
+                      selected={currentQuality === quality.value}
+                    >
+                      <Box className="quality-label">
+                        {currentQuality === quality.value && (
+                          <CheckCircleOutline className="quality-icon" />
+                        )}
+                        <Typography variant="body2">
+                          {quality.label}
+                        </Typography>
+                      </Box>
+                      {currentQuality === quality.value && (
+                        <Typography className="quality-badge">
                           Current
                         </Typography>
                       )}
-                    </MenuItem>
+                    </QualityOption>
                   ))}
                 </QualityMenu>
               </Stack>
@@ -1072,7 +1144,7 @@ function MediaPlayer() {
         <Typography variant="h6" className="title">
           More Like This
         </Typography>
-        <Box className="slider-container" sx={{ position: 'relative' }}>
+        <Box className="slider-container">
           {relatedMedia.length > visibleSlides && (
             <SliderNavButton
               onClick={handleSliderPrev}
@@ -1093,13 +1165,17 @@ function MediaPlayer() {
             }}
           >
             {relatedMedia.map((item) => (
-              <Box key={item.id} sx={{ p: 1 }}>
+              <Box key={item.id}>
                 <MediaCard onClick={() => handleMediaClick(item.id)}>
                   <CardMedia
                     component="img"
                     image={item.thumbnail}
                     alt={item.title}
-                    sx={{ aspectRatio: '16/9' }}
+                    sx={{ 
+                      aspectRatio: '16/9',
+                      objectFit: 'cover',
+                      transition: 'transform 0.3s ease'
+                    }}
                   />
                   <CardOverlay className="card-overlay">
                     <IconButton
@@ -1107,16 +1183,44 @@ function MediaPlayer() {
                         bgcolor: 'primary.main',
                         color: 'white',
                         '&:hover': { bgcolor: 'primary.dark' },
+                        width: 48,
+                        height: 48,
                       }}
                     >
-                      <PlayArrow />
+                      <PlayArrow sx={{ fontSize: 32 }} />
                     </IconButton>
                   </CardOverlay>
-                  <CardContent>
-                    <Typography variant="subtitle1" noWrap fontWeight="bold">
+                  <CardContent 
+                    className="card-content"
+                    sx={{ 
+                      flexGrow: 1,
+                      p: 2,
+                      transition: 'transform 0.3s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1
+                    }}
+                  >
+                    <Typography 
+                      variant="subtitle1" 
+                      noWrap 
+                      fontWeight="bold"
+                      sx={{ 
+                        fontSize: '1rem',
+                        lineHeight: 1.4,
+                        mb: 0.5
+                      }}
+                    >
                       {item.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontSize: '0.875rem',
+                        opacity: 0.7
+                      }}
+                    >
                       {item.duration}
                     </Typography>
                   </CardContent>

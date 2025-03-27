@@ -30,6 +30,133 @@ import { getMediaUrl } from "../config/getMediaUrl";
 import { Link, useNavigate } from "react-router-dom";
 import MediaSlider from "../components/MediaSlider";
 import CustomLoader from "../components/CustomLoader";
+import { styled } from '@mui/material/styles';
+
+// Add styled components for better organization
+const HeroSection = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  width: '100%',
+  height: '85vh',
+  [theme.breakpoints.down('md')]: {
+    height: '70vh',
+  },
+  [theme.breakpoints.down('sm')]: {
+    height: '60vh',
+  },
+  marginBottom: theme.spacing(4),
+  overflow: 'hidden',
+}));
+
+const HeroOverlay = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)',
+  zIndex: 1,
+}));
+
+const HeroContent = styled(Box)(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  zIndex: 2,
+  padding: theme.spacing(0, 4),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(0, 2),
+  },
+}));
+
+const HeroTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  marginBottom: theme.spacing(2),
+  fontSize: '3.5rem',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '3rem',
+  },
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '2rem',
+  },
+  color: theme.palette.common.white,
+  textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+}));
+
+const HeroDescription = styled(Typography)(({ theme }) => ({
+  fontSize: '1.1rem',
+  marginBottom: theme.spacing(4),
+  maxWidth: '600px',
+  color: theme.palette.common.white,
+  textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
+  [theme.breakpoints.down('sm')]: {
+    fontSize: '1rem',
+  },
+}));
+
+const HeroActions = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(4),
+}));
+
+const PlayButton = styled(Button)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.common.white,
+  padding: theme.spacing(1.5, 4),
+  fontSize: '1.1rem',
+  fontWeight: 600,
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+  },
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1, 3),
+    fontSize: '1rem',
+  },
+}));
+
+const InfoButton = styled(Button)(({ theme }) => ({
+  backgroundColor: 'rgba(109, 109, 110, 0.7)',
+  color: theme.palette.common.white,
+  padding: theme.spacing(1.5, 4),
+  fontSize: '1.1rem',
+  fontWeight: 600,
+  '&:hover': {
+    backgroundColor: 'rgba(109, 109, 110, 0.9)',
+  },
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(1, 3),
+    fontSize: '1rem',
+  },
+}));
+
+const SliderNavButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  color: theme.palette.common.white,
+  zIndex: 3,
+  '&:hover': {
+    backgroundColor: theme.palette.primary.main,
+  },
+  '&.prev': {
+    left: theme.spacing(2),
+  },
+  '&.next': {
+    right: theme.spacing(2),
+  },
+}));
+
+const VolumeButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  bottom: theme.spacing(4),
+  right: theme.spacing(4),
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  color: theme.palette.common.white,
+  zIndex: 3,
+  '&:hover': {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+}));
 
 export default function Home() {
   const theme = useTheme();
@@ -174,16 +301,14 @@ export default function Home() {
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#141414] min-h-screen overflow-x-hidden"
+      style={{ 
+        backgroundColor: '#141414',
+        minHeight: '100vh',
+        overflow: 'hidden'
+      }}
     >
-      {/* Hero Banner Section */}
-      <Box 
-        className="relative w-full" 
-        sx={{ 
-          height: { xs: '60vh', sm: '70vh', md: '85vh' },
-          marginBottom: { xs: 4, md: 0 } 
-        }}
-      >
+      {/* Hero Section */}
+      <HeroSection>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -191,216 +316,122 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7 }}
-            className="absolute inset-0 w-full h-full"
+            style={{ position: 'absolute', inset: 0 }}
           >
-            {/* Hero image or video */}
-            <Box
-              className="relative w-full h-full"
-              sx={{
-                '&:after': {
-                  content: '""',
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  backgroundImage: 'linear-gradient(to top, #141414 0%, rgba(20,20,20,0.7) 50%, rgba(20,20,20,0.4) 100%)',
-                  zIndex: 1
-                }
-              }}
-            >
-              {currentSlider?.videoUrl ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  loop
-                  muted={isMuted}
-                  poster={getMediaUrl(currentSlider, "image")}
-                  className="w-full h-full object-cover"
-                >
-                  <source src={currentSlider.videoUrl} type="video/mp4" />
-                </video>
-              ) : (
-                <img 
-                  src={getMediaUrl(currentSlider, "image")} 
-                  alt={currentSlider?.mediaId?.title || "Featured Content"}
-                  className="w-full h-full object-cover"
-                />
-              )}
-              
-              {/* Content overlay */}
-              <Box 
-                className="absolute inset-0 flex flex-col justify-center z-10"
-                sx={{ 
-                  padding: { xs: '0 1rem', sm: '0 2rem', md: '0 4rem' },
-                  top: { xs: '10%', md: '25%' } 
+            {currentSlider?.videoUrl ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                loop
+                muted={isMuted}
+                poster={getMediaUrl(currentSlider, "image")}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
                 }}
               >
-                <Box sx={{ maxWidth: { xs: '100%', md: '40%' }}}>
-                  <motion.div
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.7 }}
-                  >
-                    <Typography 
-                      variant="h2" 
-                      component="h1"
-                      sx={{ 
-                        fontWeight: 700,
-                        fontSize: { xs: '2rem', sm: '3rem', md: '3.5rem' },
-                        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-                        mb: 2
-                      }}
-                    >
-                      {currentSlider?.mediaId?.title || "Discover Amazing Content"}
-                    </Typography>
-                    
-                    {!isMobile && (
-                      <Typography 
-                        variant="h6"
-                        sx={{ 
-                          mb: 3, 
-                          textShadow: '1px 1px 3px rgba(0,0,0,0.7)',
-                          opacity: 0.9,
-                          maxWidth: '90%'
-                        }}
-                      >
-                        {currentSlider?.description || currentSlider?.mediaId?.description || "Explore the best streaming experience"}
-                      </Typography>
-                    )}
-                    
-                    <Box 
-                      sx={{ 
-                        display: 'flex', 
-                        gap: 2,
-                        mt: { xs: 2, md: 3 }
-                      }}
-                    >
-                      {mediaId && (
-                        <>
-                          <Button
-                            variant="contained"
-                            startIcon={<PlayArrow />}
-                            onClick={() => handlePlayClick(mediaId)}
-                            sx={{
-                              bgcolor: 'primary.main',
-                              color: 'white',
-                              fontWeight: 600,
-                              px: { xs: 2, md: 4 },
-                              py: { xs: 1, md: 1.3 },
-                              '&:hover': {
-                                bgcolor: 'primary.dark',
-                              },
-                              fontSize: { xs: '0.85rem', md: '1rem' }
-                            }}
-                          >
-                            Play
-                          </Button>
-                          
-                          <Button
-                            variant="contained"
-                            startIcon={<Info />}
-                            onClick={() => handleDetailsClick(mediaId)}
-                            sx={{
-                              bgcolor: 'rgba(109, 109, 110, 0.7)',
-                              color: 'white',
-                              fontWeight: 600,
-                              px: { xs: 2, md: 4 },
-                              py: { xs: 1, md: 1.3 },
-                              '&:hover': {
-                                bgcolor: 'rgba(109, 109, 110, 0.5)',
-                              },
-                              fontSize: { xs: '0.85rem', md: '1rem' }
-                            }}
-                          >
-                            More Info
-                          </Button>
-                        </>
-                      )}
-                    </Box>
-                  </motion.div>
-                </Box>
-              </Box>
-              
-              {/* Mute/Unmute button */}
-              {currentSlider?.videoUrl && (
-                <Box 
-                  sx={{ 
-                    position: 'absolute', 
-                    bottom: { xs: 10, md: 100 }, 
-                    right: { xs: 10, md: 50 },
-                    zIndex: 2 
-                  }}
+                <source src={currentSlider.videoUrl} type="video/mp4" />
+              </video>
+            ) : (
+              <Box
+                component="img"
+                src={getMediaUrl(currentSlider, "image")}
+                alt={currentSlider?.mediaId?.title || "Featured Content"}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            )}
+            
+            <HeroOverlay />
+            
+            <HeroContent>
+              <Box sx={{ maxWidth: { xs: '100%', md: '50%' } }}>
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.7 }}
                 >
-                  <IconButton 
-                    onClick={toggleMute}
-                    sx={{ 
-                      bgcolor: 'rgba(0,0,0,0.5)', 
-                      color: 'white',
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }
-                    }}
-                  >
-                    {isMuted ? <VolumeOff /> : <VolumeUp />}
-                  </IconButton>
-                </Box>
-              )}
-              
-              {/* Navigation arrows */}
-              {sliders.length > 1 && (
-                <>
-                  <IconButton
-                    onClick={prevSlide}
-                    sx={{
-                      position: 'absolute',
-                      left: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(0,0,0,0.5)',
-                      color: 'white',
-                      zIndex: 2,
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-                      display: { xs: 'none', md: 'flex' }
-                    }}
-                  >
-                    <ChevronLeft />
-                  </IconButton>
-                  <IconButton
-                    onClick={nextSlide}
-                    sx={{
-                      position: 'absolute',
-                      right: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      bgcolor: 'rgba(0,0,0,0.5)',
-                      color: 'white',
-                      zIndex: 2,
-                      '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-                      display: { xs: 'none', md: 'flex' }
-                    }}
-                  >
-                    <ChevronRight />
-                  </IconButton>
-                </>
-              )}
-            </Box>
+                  <HeroTitle variant="h1">
+                    {currentSlider?.mediaId?.title}
+                  </HeroTitle>
+                  
+                  <HeroDescription variant="body1">
+                    {currentSlider?.mediaId?.plot}
+                  </HeroDescription>
+                  
+                  <HeroActions>
+                    <PlayButton
+                      variant="contained"
+                      startIcon={<PlayArrow />}
+                      onClick={() => handlePlayClick(mediaId)}
+                    >
+                      Play Now
+                    </PlayButton>
+                    
+                    <InfoButton
+                      variant="contained"
+                      startIcon={<Info />}
+                      onClick={() => handleDetailsClick(mediaId)}
+                    >
+                      More Info
+                    </InfoButton>
+                  </HeroActions>
+                </motion.div>
+              </Box>
+            </HeroContent>
           </motion.div>
         </AnimatePresence>
-      </Box>
 
-      {/* Content Section */}
-      <Box sx={{ mt: { xs: -8, sm: -12, md: -20 }, position: 'relative', zIndex: 5 }}>
-        {mediaData.trending.length > 0 && (
+        {/* Navigation Controls */}
+        {sliders.length > 1 && (
+          <>
+            <SliderNavButton
+              onClick={prevSlide}
+              className="prev"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft />
+            </SliderNavButton>
+            
+            <SliderNavButton
+              onClick={nextSlide}
+              className="next"
+              aria-label="Next slide"
+            >
+              <ChevronRight />
+            </SliderNavButton>
+          </>
+        )}
+
+        {/* Volume Control */}
+        {currentSlider?.videoUrl && (
+          <VolumeButton
+            onClick={toggleMute}
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeOff /> : <VolumeUp />}
+          </VolumeButton>
+        )}
+      </HeroSection>
+
+      {/* Content Sections */}
+      <Box sx={{ px: { xs: 2, sm: 4 }, pb: 6 }}>
+        {mediaData.featured.length > 0 && (
           <MediaSlider
-            title="Trending Now"
-            items={mediaData.trending}
+            title="Featured"
+            items={mediaData.featured}
             sx={{ mb: 4 }}
           />
         )}
         
-        {mediaData.originals?.length > 0 && (
+        {mediaData.trending.length > 0 && (
           <MediaSlider
-            title="StreamVerse Originals"
-            items={mediaData.originals}
+            title="Trending Now"
+            items={mediaData.trending}
             sx={{ mb: 4 }}
           />
         )}
@@ -415,13 +446,21 @@ export default function Home() {
         
         {mediaData.popular.length > 0 && (
           <MediaSlider
-            title="Popular on StreamVerse"
+            title="Popular on Streamverse"
             items={mediaData.popular}
             sx={{ mb: 4 }}
           />
         )}
         
-        {mediaData.sports?.length > 0 && (
+        {mediaData.originals.length > 0 && (
+          <MediaSlider
+            title="Streamverse Originals"
+            items={mediaData.originals}
+            sx={{ mb: 4 }}
+          />
+        )}
+        
+        {mediaData.sports.length > 0 && (
           <MediaSlider
             title="Sports"
             items={mediaData.sports}
@@ -429,9 +468,9 @@ export default function Home() {
           />
         )}
         
-        {mediaData.news?.length > 0 && (
+        {mediaData.news.length > 0 && (
           <MediaSlider
-            title="News & Documentaries"
+            title="News"
             items={mediaData.news}
             sx={{ mb: 4 }}
           />

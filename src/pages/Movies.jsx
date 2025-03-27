@@ -120,7 +120,7 @@ export default function Movies() {
 
   // Navigate to movie details
   const navigateToMovie = (movieId) => {
-    navigate(`/movie/${movieId}`);
+    navigate(`/media/${movieId}`);
   };
 
   // Loading state with animation

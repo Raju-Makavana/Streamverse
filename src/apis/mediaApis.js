@@ -367,22 +367,47 @@ export const getNewsByCategory = async (category, limit = 6) => {
 // Search API
 export const searchMediaApi = async (searchParams) => {
   try {
-    const { query, type, genre, language, year, limit } = searchParams;
-    
-    // Build query parameters
-    const params = new URLSearchParams();
-    if (query) params.append('query', query);
-    if (type) params.append('type', type);
-    if (genre) params.append('genre', genre);
-    if (language) params.append('language', language);
-    if (year) params.append('year', year);
-    if (limit) params.append('limit', limit);
-    
-    const response = await axios.get(`${url}/media/search?${params.toString()}`, jsonconfig);
-    return response.data;
+    const { data } = await axios.get(`${url}/media/search`, {
+      params: {
+        query: searchParams.query,
+        type: searchParams.type,
+        genre: searchParams.genre,
+        year: searchParams.year,
+        language: searchParams.language,
+        limit: searchParams.limit || 24,
+        page: searchParams.page || 1
+      },
+      ...jsonconfig
+    });
+
+    // Get related media if we have results
+    let relatedMedia = [];
+    if (data.data && data.data.length > 0) {
+      const relatedResponse = await axios.get(`${url}/media/related`, {
+        params: {
+          mediaId: data.data[0]._id,
+          limit: 6
+        },
+        ...jsonconfig
+      });
+      relatedMedia = relatedResponse.data.data || [];
+    }
+
+    return {
+      success: true,
+      data: data.data || [],
+      related: relatedMedia,
+      count: data.count || 0
+    };
   } catch (error) {
-    console.error('Error searching media:', error);
-    return { success: false, error: error.message };
+    console.error('Search error:', error);
+    return {
+      success: false,
+      data: [],
+      related: [],
+      count: 0,
+      error: error.response?.data || error.message
+    };
   }
 };
 
@@ -400,7 +425,7 @@ export const getRelatedMediaApi = async (mediaId) => {
 // User Media Actions APIs
 export const addToWatchLater = async (mediaId) => {
   try {
-    const response = await axios.post(`${url}/user/watchlist/add`, { mediaId }, jsonconfig);
+    const response = await axios.post(`${url}/user/watch-later/add`, { mediaId }, jsonconfig);
     return { 
       success: true, 
       data: response.data,
@@ -418,7 +443,7 @@ export const addToWatchLater = async (mediaId) => {
 
 export const removeFromWatchLater = async (mediaId) => {
   try {
-    const response = await axios.post(`${url}/user/watchlist/remove`, { mediaId }, jsonconfig);
+    const response = await axios.post(`${url}/user/watch-later/remove`, { mediaId }, jsonconfig);
     return { 
       success: true, 
       data: response.data,
@@ -436,7 +461,7 @@ export const removeFromWatchLater = async (mediaId) => {
 
 export const getWatchLaterList = async () => {
   try {
-    const response = await axios.get(`${url}/user/watchlist`, jsonconfig);
+    const response = await axios.get(`${url}/user/watch-later`, jsonconfig);
     return { 
       success: true, 
       data: response.data?.data || [] 
