@@ -101,26 +101,46 @@ const GlobalSearch = () => {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    if ("webkitSpeechRecognition" in window) {
-      recognitionRef.current = new window.webkitSpeechRecognition();
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        handleVoiceSearchResult(text);
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+          
+        setSearchQuery(transcript);
+        
+        if (event.results[0].isFinal) {
+          handleVoiceSearchResult(transcript);
+        }
       };
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
-        setVoiceDialogOpen(false);
+        if (searchQuery && searchQuery.trim().length >= 2) {
+          setVoiceDialogOpen(false);
+          debouncedSearch(searchQuery);
+          setShowResults(true);
+        }
       };
       
       recognitionRef.current.onerror = (event) => {
         console.error('Speech recognition error', event.error);
         setIsListening(false);
-        setVoiceDialogOpen(false);
+        
+        // Show error message based on the error type
+        if (event.error === 'not-allowed') {
+          alert('Microphone access was denied. Please enable microphone access in your browser settings.');
+        } else if (event.error === 'no-speech') {
+          // No need to alert, just close dialog after a delay
+          setTimeout(() => setVoiceDialogOpen(false), 1500);
+        }
       };
     }
 
@@ -184,11 +204,28 @@ const GlobalSearch = () => {
     setSearchQuery('');
   };
 
+  const handleSearchFocus = () => {
+    // Immediately navigate to search page when clicked
+    navigate('/search');
+    setShowResults(false);
+  };
+
   const startListening = () => {
-    if (recognitionRef.current) {
-      setVoiceDialogOpen(true);
-      setIsListening(true);
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
+      return;
+    }
+    
+    setVoiceDialogOpen(true);
+    setIsListening(true);
+    setSearchQuery('');
+    try {
       recognitionRef.current.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      setIsListening(false);
+      setVoiceDialogOpen(false);
+      alert('Failed to start speech recognition. Please try again.');
     }
   };
 
@@ -202,8 +239,14 @@ const GlobalSearch = () => {
   const handleVoiceSearchResult = (text) => {
     setSearchQuery(text);
     setVoiceDialogOpen(false);
-    debouncedSearch(text);
-    setShowResults(true);
+    
+    if (text && text.trim().length >= 2) {
+      // Navigate to search page with voice search query
+      navigate(`/search?q=${encodeURIComponent(text.trim())}`);
+    } else {
+      // Navigate to search page without query if text is too short
+      navigate('/search');
+    }
   };
 
   const handleClickAway = () => {
@@ -224,7 +267,11 @@ const GlobalSearch = () => {
   return (
     <>
       <Box sx={{ position: 'relative' }}>
-        <SearchWrapper ref={anchorRef}>
+        <SearchWrapper 
+          ref={anchorRef} 
+          onClick={handleSearchFocus}
+          sx={{ cursor: 'pointer' }}
+        >
           <SearchIconWrapper>
             <SearchIcon />
           </SearchIconWrapper>
@@ -234,10 +281,13 @@ const GlobalSearch = () => {
             value={searchQuery}
             onChange={handleSearchChange}
             onKeyDown={handleSearchSubmit}
-            onFocus={() => searchQuery.trim().length >= 2 && setShowResults(true)}
+            onFocus={handleSearchFocus}
           />
           <IconButton
-            onClick={startListening}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent click from triggering parent handler
+              startListening();
+            }}
             sx={{ 
               position: 'absolute', 
               right: 0, 
@@ -252,113 +302,23 @@ const GlobalSearch = () => {
             <MicIcon />
           </IconButton>
         </SearchWrapper>
-
-        <Popper
-          open={showResults}
-          anchorEl={anchorRef.current}
-          transition
-          placement="bottom-start"
-          style={{ zIndex: 1301, width: anchorRef.current?.offsetWidth || 500 }}
-        >
-          {({ TransitionProps }) => (
-            <Grow
-              {...TransitionProps}
-              style={{ transformOrigin: 'left top' }}
-            >
-              <ClickAwayListener onClickAway={handleClickAway}>
-                <Paper elevation={8} sx={{ 
-                  mt: 1, 
-                  maxHeight: '70vh', 
-                  overflow: 'auto', 
-                  bgcolor: '#1a1a1a',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.5)'
-                }}>
-                  {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                      <CircularProgress size={30} />
-                    </Box>
-                  ) : searchResults.length > 0 ? (
-                    <>
-                      <List sx={{ width: '100%', py: 0 }}>
-                        {searchResults.slice(0, 6).map((item) => (
-                          <SearchResultItem 
-                            key={item._id} 
-                            onClick={() => handleResultClick(item._id)}
-                          >
-                            <ListItemAvatar>
-                              <Avatar
-                                variant="rounded"
-                                src={getMediaUrl(item.posterUrl, 'thumbnail')}
-                                alt={item.title}
-                                sx={{ width: 56, height: 56, borderRadius: 1 }}
-                              >
-                                {getMediaTypeIcon(item.type)}
-                              </Avatar>
-                            </ListItemAvatar>
-                            <ListItemText
-                              primary={item.title}
-                              secondary={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                                  {getMediaTypeIcon(item.type)}
-                                  <Typography variant="body2" color="text.secondary" component="span">
-                                    {item.type} • {item.year}
-                                  </Typography>
-                                </Box>
-                              }
-                            />
-                          </SearchResultItem>
-                        ))}
-                      </List>
-                      
-                      <Divider />
-                      
-                      <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'center' }}>
-                        <Box 
-                          component="button"
-                          onClick={() => {
-                            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-                            setShowResults(false);
-                            setSearchQuery('');
-                          }}
-                          sx={{
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            py: 1,
-                            px: 2,
-                            borderRadius: 1,
-                            border: 'none',
-                            cursor: 'pointer',
-                            width: '100%',
-                            fontWeight: 'bold',
-                            '&:hover': {
-                              bgcolor: 'primary.dark',
-                            }
-                          }}
-                        >
-                          View all results
-                        </Box>
-                      </Box>
-                    </>
-                  ) : searchQuery.trim().length >= 2 ? (
-                    <Box sx={{ p: 3, textAlign: 'center' }}>
-                      <Typography variant="body1">No results found for "{searchQuery}"</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Try different keywords or check your spelling
-                      </Typography>
-                    </Box>
-                  ) : null}
-                </Paper>
-              </ClickAwayListener>
-            </Grow>
-          )}
-        </Popper>
       </Box>
 
       {/* Voice Search Dialog */}
       <Dialog 
         open={voiceDialogOpen} 
-        onClose={() => setVoiceDialogOpen(false)}
+        onClose={() => {
+          stopListening();
+          setVoiceDialogOpen(false);
+        }}
+        TransitionProps={{
+          onExited: () => {
+            // Clean up when dialog is fully closed
+            if (isListening) {
+              stopListening();
+            }
+          }
+        }}
         PaperProps={{
           sx: {
             bgcolor: '#1a1a1a',
@@ -416,6 +376,13 @@ const GlobalSearch = () => {
               ? "Listening... Speak now" 
               : "Click the microphone to start speaking"}
           </Typography>
+          {isListening && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                {searchQuery ? `Heard: "${searchQuery}"` : 'Waiting for speech...'}
+              </Typography>
+            </Box>
+          )}
         </DialogContent>
       </Dialog>
     </>

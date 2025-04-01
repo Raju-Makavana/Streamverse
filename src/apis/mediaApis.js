@@ -367,7 +367,12 @@ export const getNewsByCategory = async (category, limit = 6) => {
 // Search API
 export const searchMediaApi = async (searchParams) => {
   try {
-    const { data } = await axios.get(`${url}/media/search`, {
+    // If no query is provided, get all media instead
+    const endpoint = !searchParams.query || searchParams.query.trim() === '' 
+      ? `${url}/media` 
+      : `${url}/media/search`;
+
+    const { data } = await axios.get(endpoint, {
       params: {
         query: searchParams.query,
         type: searchParams.type,
@@ -375,29 +380,36 @@ export const searchMediaApi = async (searchParams) => {
         year: searchParams.year,
         language: searchParams.language,
         limit: searchParams.limit || 24,
-        page: searchParams.page || 1
+        page: searchParams.page || 1,
+        sort: !searchParams.query ? 'popular' : undefined // Sort by popularity when showing all
       },
       ...jsonconfig
     });
 
-    // Get related media if we have results
-    let relatedMedia = [];
-    if (data.data && data.data.length > 0) {
-      const relatedResponse = await axios.get(`${url}/media/related`, {
-        params: {
-          mediaId: data.data[0]._id,
-          limit: 6
-        },
-        ...jsonconfig
-      });
-      relatedMedia = relatedResponse.data.data || [];
+    // Get related media if we have results but no related data in response
+    let relatedMedia = data.related || [];
+    if (searchParams.query && data.data && data.data.length > 0 && !data.related) {
+      try {
+        const relatedResponse = await axios.get(`${url}/media/related`, {
+          params: {
+            mediaId: data.data[0]._id,
+            limit: 6
+          },
+          ...jsonconfig
+        });
+        relatedMedia = relatedResponse.data.data || [];
+      } catch (err) {
+        console.error('Failed to fetch related media:', err);
+      }
     }
 
     return {
       success: true,
       data: data.data || [],
       related: relatedMedia,
-      count: data.count || 0
+      count: data.count || 0,
+      page: data.page || searchParams.page || 1,
+      totalPages: data.totalPages || Math.ceil((data.count || 0) / (searchParams.limit || 24))
     };
   } catch (error) {
     console.error('Search error:', error);
@@ -406,6 +418,8 @@ export const searchMediaApi = async (searchParams) => {
       data: [],
       related: [],
       count: 0,
+      page: 1,
+      totalPages: 0,
       error: error.response?.data || error.message
     };
   }

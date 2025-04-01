@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Box, 
   Typography, 
@@ -17,9 +17,12 @@ import {
   IconButton,
   CircularProgress,
   Container,
-  Pagination
+  Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
-import { Search as SearchIcon, FilterList, Movie, Tv, Clear } from '@mui/icons-material';
+import { Search as SearchIcon, FilterList, Movie, Tv, Clear, Mic as MicIcon, MicOff as MicOffIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { searchMediaApi } from '../apis/mediaApis';
 import { getMediaUrl } from '../config/getMediaUrl';
@@ -39,8 +42,15 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
   const [error, setError] = useState(null);
+  const [showAllContent, setShowAllContent] = useState(!initialQuery);
   
+  // Voice search states
+  const [isListening, setIsListening] = useState(false);
+  const [voiceDialogOpen, setVoiceDialogOpen] = useState(false);
+  const recognitionRef = useRef(null);
+
   // Filter states
   const [filters, setFilters] = useState({
     type: '',
@@ -55,14 +65,121 @@ const SearchResults = () => {
   const yearOptions = [...Array(2024 - 1990 + 1).keys()].map(i => String(2024 - i));
   const languageOptions = ['English', 'Spanish', 'Hindi', 'French', 'German', 'Japanese', 'Korean', 'Chinese'];
   
+  // Voice search initialization
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+          
+        setSearchQuery(transcript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+        if (searchQuery.trim().length >= 2) {
+          setVoiceDialogOpen(false);
+          
+          // Update URL with voice search query
+          const searchParams = new URLSearchParams(location.search);
+          searchParams.set('q', searchQuery);
+          navigate(`${location.pathname}?${searchParams.toString()}`);
+          
+          performSearch();
+        } else {
+          setVoiceDialogOpen(false);
+          // If search query is too short, show all content
+          if (searchQuery.trim().length > 0) {
+            // Clear the search query from URL
+            const searchParams = new URLSearchParams(location.search);
+            searchParams.delete('q');
+            navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+          }
+          loadAllMedia();
+        }
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+        
+        // Show error message based on the error type
+        if (event.error === 'not-allowed') {
+          alert('Microphone access was denied. Please enable microphone access in your browser settings.');
+        } else if (event.error === 'no-speech') {
+          // No need to alert, just close dialog after a delay
+          setTimeout(() => setVoiceDialogOpen(false), 1500);
+        }
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [searchQuery]);
+  
   useEffect(() => {
     if (initialQuery) {
       performSearch();
+    } else {
+      // If no search query is provided, load all media
+      loadAllMedia();
     }
   }, [initialQuery, page, filters]);
   
+  const loadAllMedia = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setShowAllContent(true);
+      
+      // Prepare search parameters without a query
+      const searchParams = {
+        page,
+        limit: 24,
+        ...filters
+      };
+      
+      const result = await searchMediaApi(searchParams);
+      
+      if (result.success) {
+        setResults(result.data || []);
+        setTotalResults(result.count || 0);
+        setTotalPages(result.totalPages || Math.ceil(result.count / 24));
+      } else {
+        setError(result.error || 'Failed to fetch media');
+        setResults([]);
+        setTotalResults(0);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error('Error loading media:', error);
+      setError('An error occurred while loading media');
+      setResults([]);
+      setTotalResults(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const performSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      loadAllMedia();
+      return;
+    }
+    
+    setShowAllContent(false);
     
     try {
       setLoading(true);
@@ -87,11 +204,13 @@ const SearchResults = () => {
         setResults(result.data || []);
         setRelatedResults(result.related || []);
         setTotalResults(result.count || 0);
+        setTotalPages(result.totalPages || Math.ceil(result.count / 24));
       } else {
         setError(result.error || 'Failed to fetch search results');
         setResults([]);
         setRelatedResults([]);
         setTotalResults(0);
+        setTotalPages(0);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -99,8 +218,35 @@ const SearchResults = () => {
       setResults([]);
       setRelatedResults([]);
       setTotalResults(0);
+      setTotalPages(0);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Voice search methods
+  const startListening = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
+      return;
+    }
+    
+    try {
+      setVoiceDialogOpen(true);
+      setIsListening(true);
+      recognitionRef.current.start();
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      setIsListening(false);
+      setVoiceDialogOpen(false);
+      alert('Failed to start speech recognition. Please try again.');
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      setIsListening(false);
+      recognitionRef.current.stop();
     }
   };
   
@@ -144,7 +290,7 @@ const SearchResults = () => {
           pl: 2
         }}
       >
-        Search Results
+        {searchQuery ? `Search Results: "${searchQuery}"` : 'Browse All Content'}
       </Typography>
       
       {/* Search Form */}
@@ -174,6 +320,13 @@ const SearchResults = () => {
                     <SearchIcon />
                   </InputAdornment>
                 ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={startListening}>
+                      <MicIcon />
+                    </IconButton>
+                  </InputAdornment>
+                )
               }}
             />
           </Grid>
@@ -273,7 +426,7 @@ const SearchResults = () => {
           {results.length > 0 && (
             <>
               <Typography variant="h5" color="white" mb={3}>
-                Search Results ({totalResults})
+                {showAllContent ? 'All Content' : `Search Results (${totalResults})`}
               </Typography>
               <Grid container spacing={3}>
                 {results.map((media) => (
@@ -294,6 +447,7 @@ const SearchResults = () => {
                         border: '1px solid rgba(255,255,255,0.03)',
                         boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
                         position: 'relative',
+                        maxWidth: '100%',
                         '&:hover': {
                           boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
                           '& .MuiCardMedia-root': {
@@ -303,18 +457,24 @@ const SearchResults = () => {
                       }}
                       onClick={() => handleMediaClick(media._id)}
                     >
-                      <CardMedia
-                        component="img"
-                        height="300"
-                        image={getMediaUrl(media.thumbnail)}
-                        alt={media.title}
-                        sx={{ 
-                          objectFit: 'cover',
-                          transition: 'transform 0.3s ease'
-                        }}
-                      />
-                      <CardContent>
-                        <Typography variant="subtitle1" noWrap>
+                      <Box sx={{ position: 'relative', pt: '150%' /* 2:3 aspect ratio */ }}>
+                        <CardMedia
+                          component="img"
+                          image={getMediaUrl(media.posterUrl || media.thumbnail, 'poster')}
+                          alt={media.title}
+                          sx={{ 
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease'
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                        <Typography variant="subtitle1" noWrap sx={{ fontWeight: 'medium' }}>
                           {media.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -326,10 +486,11 @@ const SearchResults = () => {
                 ))}
               </Grid>
               
+              {/* Pagination */}
               {totalResults > 24 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                   <Pagination
-                    count={Math.ceil(totalResults / 24)}
+                    count={totalPages}
                     page={page}
                     onChange={(e, value) => setPage(value)}
                     color="primary"
@@ -350,21 +511,48 @@ const SearchResults = () => {
                   <Grid item xs={6} sm={4} md={3} lg={2} key={media._id}>
                     <Card 
                       component={motion.div}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ 
+                        scale: 1.05,
+                        transition: { duration: 0.2 }
+                      }}
                       sx={{ 
                         bgcolor: '#1a1a1a', 
-                        cursor: 'pointer'
+                        height: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.03)',
+                        boxShadow: '0 6px 12px rgba(0,0,0,0.2)',
+                        position: 'relative',
+                        maxWidth: '100%',
+                        '&:hover': {
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.3)',
+                          '& .MuiCardMedia-root': {
+                            transform: 'scale(1.05)'
+                          }
+                        }
                       }}
                       onClick={() => handleMediaClick(media._id)}
                     >
-                      <CardMedia
-                        component="img"
-                        height="300"
-                        image={getMediaUrl(media.thumbnail)}
-                        alt={media.title}
-                      />
-                      <CardContent>
-                        <Typography variant="subtitle1" noWrap>
+                      <Box sx={{ position: 'relative', pt: '150%' /* 2:3 aspect ratio */ }}>
+                        <CardMedia
+                          component="img"
+                          image={getMediaUrl(media.posterUrl || media.thumbnail, 'poster')}
+                          alt={media.title}
+                          sx={{ 
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.3s ease'
+                          }}
+                        />
+                      </Box>
+                      <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                        <Typography variant="subtitle1" noWrap sx={{ fontWeight: 'medium' }}>
                           {media.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -387,6 +575,88 @@ const SearchResults = () => {
           )}
         </>
       )}
+
+      {/* Voice Search Dialog */}
+      <Dialog 
+        open={voiceDialogOpen} 
+        onClose={() => {
+          stopListening();
+          setVoiceDialogOpen(false);
+        }}
+        TransitionProps={{
+          onExited: () => {
+            // Clean up when dialog is fully closed
+            if (isListening) {
+              stopListening();
+            }
+          }
+        }}
+        PaperProps={{
+          sx: {
+            bgcolor: '#1a1a1a',
+            color: 'white',
+            borderRadius: 2,
+            minWidth: 300,
+            border: '1px solid rgba(255,255,255,0.1)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
+          Voice Search
+          <IconButton
+            aria-label="close"
+            onClick={() => {
+              stopListening();
+              setVoiceDialogOpen(false);
+            }}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pb: 3 }}>
+          <Box 
+            sx={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              my: 3,
+              p: 2,
+              borderRadius: '50%',
+              bgcolor: isListening ? 'primary.main' : 'rgba(255,255,255,0.1)',
+              width: 80,
+              height: 80,
+              transition: 'all 0.3s ease',
+              boxShadow: isListening ? '0 0 15px rgba(229,9,20,0.5)' : 'none'
+            }}
+          >
+            <IconButton 
+              color="inherit" 
+              onClick={isListening ? stopListening : startListening}
+              sx={{ width: 50, height: 50 }}
+            >
+              {isListening ? <MicOffIcon fontSize="large" /> : <MicIcon fontSize="large" />}
+            </IconButton>
+          </Box>
+          <Typography align="center" variant="body1">
+            {isListening 
+              ? "Listening... Speak now" 
+              : "Click the microphone to start speaking"}
+          </Typography>
+          {isListening && (
+            <Box sx={{ mt: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                {searchQuery ? `Heard: "${searchQuery}"` : 'Waiting for speech...'}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };
