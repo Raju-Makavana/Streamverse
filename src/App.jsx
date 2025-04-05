@@ -28,7 +28,7 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: { 
-      main: '#e50914', // Netflix-like red
+      main: '#e50914', 
       light: '#ff3d47',
       dark: '#b30710',
     },
