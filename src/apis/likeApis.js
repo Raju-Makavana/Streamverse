@@ -2,7 +2,13 @@ import axios from 'axios';
 import { getEnvConfig } from '../config/envConfig';
 
 const url = getEnvConfig.get("backendURI");
-const jsonconfig = { withCredentials: true };
+// const jsonconfig = { withCredentials: true };
+const jsonconfig = {
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: true,
+};
 
 export const addLike = async (mediaId) => {
   try {
