@@ -288,6 +288,8 @@ const GlobalSearch = () => {
               e.stopPropagation(); // Prevent click from triggering parent handler
               startListening();
             }}
+            disableRipple
+            disableTouchRipple
             sx={{ 
               position: 'absolute', 
               right: 0, 

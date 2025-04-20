@@ -14,12 +14,13 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 import LoginIcon from "@mui/icons-material/Login";
 import GoogleIcon from "@mui/icons-material/Google";
-import bg from "../assets/content-2.jpg";
+import bg from "../assets/Background.png";
 import { loginApi } from "../apis/generalApis";
 import Swal from "sweetalert2";
 import { getEnvConfig } from "../config/envConfig";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { googleLoginApi } from "../util/serviceAuth/serviceAuth";
+import logo from "../assets/StreamVerse.svg";
 import { useDispatch, useSelector } from "react-redux";
 import {
   clearError,
@@ -140,34 +141,57 @@ export default function Login() {
     <GoogleOAuthProvider clientId={googleId}>
       <Box
         sx={{
-          display: "flex",
-          height: "100vh",
-          overflow: "hidden",
-          width: "100%",
+          position: 'relative',
+          minHeight: '100vh',
+          width: '100%',
+          overflow: 'hidden',
         }}
       >
-        {/* Left Side - Form */}
+        {/* Background Image */}
         <Box
           sx={{
-            flex: "0 0 50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#000",
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            '& img': {
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            },
+          }}
+        >
+          <img src={bg} alt="Background" />
+        </Box>
+
+        {/* Content */}
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            padding: '20px',
           }}
         >
           <Paper
-            elevation={0}
+            elevation={3}
             sx={{
-              width: "100%",
-              maxWidth: "500px",
-              backgroundColor: "transparent",
-              color: "#fff",
+              width: '100%',
+              maxWidth: '500px',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backdropFilter: 'blur(10px)',
+              color: '#fff',
               p: 4,
+              border: '1px solid rgba(255, 255, 255, 0.2)',
             }}
           >
-            <Box sx={{ textAlign: "center", mb: 4 }}>
-              <LoginIcon sx={{ fontSize: 40, color: "primary.main", mb: 2 }} />
+            <Box sx={{ textAlign: "center", display:"flex", alignItems:"center", flexDirection:"column"}}>
+              <img src={logo} alt="Logo" style={{ height: 50, marginBottom:10 }} />
+
               <Typography variant="h4" component="h1" gutterBottom>
                 Welcome Back
               </Typography>
@@ -261,14 +285,14 @@ export default function Login() {
                 }}
               />
 
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+              {/* <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
                 <Link
                   to="/forgot-password"
                   style={{ color: "#e50914", textDecoration: "none" }}
                 >
                   Forgot Password?
                 </Link>
-              </Box>
+              </Box> */}
 
               <Box sx={{ mt: 3 }}>
                 <Button
@@ -289,7 +313,7 @@ export default function Login() {
                 </Button>
               </Box>
 
-              <Divider sx={{ my: 3, bgcolor: "rgba(255, 255, 255, 0.2)" }}>
+              <Divider sx={{ my: 3, bgcolor: "rgba(255, 255, 255, 0)" }}>
                 OR
               </Divider>
 
@@ -355,54 +379,6 @@ export default function Login() {
               </Box>
             </form>
           </Paper>
-        </Box>
-
-        {/* Right Side - Image */}
-        <Box
-          sx={{
-            flex: "0 0 50%",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundImage: `url(${bg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.3)",
-              },
-            }}
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 40,
-              left: 40,
-              right: 40,
-              color: "#fff",
-              zIndex: 1,
-            }}
-          >
-            <Typography variant="h3" gutterBottom sx={{ fontWeight: "bold" }}>
-              Welcome Back!
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.8 }}>
-              Sign in to continue your journey with us
-            </Typography>
-          </Box>
         </Box>
       </Box>
     </GoogleOAuthProvider>

@@ -947,23 +947,25 @@ function MediaPlayer() {
             <TopBar>
               <IconButton
                 onClick={() => window.history.back()}
+                disableRipple
+                disableTouchRipple
                 sx={{ color: "white" }}
               >
                 <ArrowBack />
               </IconButton>
               <Stack direction="row" spacing={1}>
                 <Tooltip title="Save to Playlist">
-                  <ControlButton>
+                  <ControlButton disableRipple disableTouchRipple>
                     <Bookmark />
                   </ControlButton>
                 </Tooltip>
                 <Tooltip title="Share">
-                  <ControlButton>
+                  <ControlButton disableRipple disableTouchRipple>
                     <Share />
                   </ControlButton>
                 </Tooltip>
                 <Tooltip title="More Options">
-                  <ControlButton>
+                  <ControlButton disableRipple disableTouchRipple>
                     <MoreHoriz />
                   </ControlButton>
                 </Tooltip>
@@ -978,12 +980,14 @@ function MediaPlayer() {
               />
 
               <Stack direction="row" spacing={2} alignItems="center">
-                <SkipButton onClick={() => handleSkip(-10)}>
+                <SkipButton onClick={() => handleSkip(-10)} disableRipple disableTouchRipple>
                   <Replay10 sx={{ color: "white" }} />
                 </SkipButton>
 
                 <IconButton 
                   onClick={handlePlayPause} 
+                  disableRipple
+                  disableTouchRipple
                   sx={{ 
                     color: "white", 
                     backgroundColor: "rgba(255,255,255,0.1)",
@@ -1002,7 +1006,7 @@ function MediaPlayer() {
                   )}
                 </IconButton>
 
-                <SkipButton onClick={() => handleSkip(10)}>
+                <SkipButton onClick={() => handleSkip(10)} disableRipple disableTouchRipple>
                   <Forward10 sx={{ color: "white" }} />
                 </SkipButton>
 
@@ -1019,7 +1023,7 @@ function MediaPlayer() {
                     alignItems: "center",
                   }}
                 >
-                  <IconButton onClick={handleMute} sx={{ color: "white" }}>
+                  <IconButton onClick={handleMute} disableRipple disableTouchRipple sx={{ color: "white" }}>
                     {muted || volume === 0 ? (
                       <VolumeOff />
                     ) : (

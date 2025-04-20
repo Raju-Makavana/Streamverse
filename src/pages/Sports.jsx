@@ -5,10 +5,6 @@ import {
   IconButton,
   Button,
   Alert,
-  Chip,
-  Grid,
-  useTheme,
-  useMediaQuery,
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,8 +15,6 @@ import {
   LiveTv,
   Schedule,
   Refresh,
-  SportsEsports,
-  Star,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 
@@ -35,7 +29,6 @@ import {
   getUpcomingSports,
 } from "../apis/mediaApis";
 import SportsMediaSlider from "../components/SportMediaSlider";
-
 
 export default function Sports() {
   const navigate = useNavigate();
@@ -157,7 +150,7 @@ export default function Sports() {
         maxWidth: "100%",
       }}
     >
-      <SportsEsports sx={{ fontSize: 48, color: "grey.500", mb: 2 }} />
+      {/* <SportsEsports sx={{ fontSize: 48, color: "grey.500", mb: 2 }} /> */}
       <Typography variant="h6" color="grey.500" textAlign="center">
         {message}
       </Typography>
@@ -624,6 +617,7 @@ export default function Sports() {
         <SportsMediaSlider
           title="Popular in Sports"
           items={sportsData.popular}
+          
         />
         
         {/* Category-specific content - Now using the custom SportsMediaSlider instead of MediaSlider */}

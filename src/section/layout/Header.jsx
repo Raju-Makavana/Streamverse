@@ -41,6 +41,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import { logoutUser } from "../../slices/authSlice";
 import GlobalSearch from "../../components/GlobalSearch";
+import logo from "../../assets/StreamVerse.svg";
 
 const Search = styled("div")(({ theme }) => ({
   position: "relative",
@@ -225,8 +226,9 @@ const Header = ({ onSidebarToggle }) => {
             color="inherit"
             onClick={() => navigate("/")}
             sx={{ p: 0, mr: 3 }}
+            
           >
-            <img src="/logo.png" alt="Logo" style={{ height: 40 }} />
+            <img src={logo} alt="Logo" style={{ height: 40 }}  />
           </IconButton>
 
           {/* Desktop Navigation */}
@@ -333,7 +335,7 @@ const Header = ({ onSidebarToggle }) => {
             ))}
 
             <Divider sx={{ my: 0.5, bgcolor: "rgba(255, 255, 255, 0.1)" }} />
-            <MenuItem
+            {/* <MenuItem
               onClick={() => {
                 handleMenuClose();
                 navigate("/settings");
@@ -344,7 +346,7 @@ const Header = ({ onSidebarToggle }) => {
                 <SettingsIcon />
               </ListItemIcon>
               <ListItemText primary="Settings" />
-            </MenuItem>
+            </MenuItem> */}
             <MenuItem onClick={handleLogout} sx={{ py: 1 }}>
               <ListItemIcon sx={{ color: "white", minWidth: 36 }}>
                 <LogoutIcon sx={{ color: 'primary.main' }} />

@@ -124,6 +124,8 @@ const Navbar = () => {
             key={item.title}
             onClick={() => handleMenuItemClick(item.path)}
             selected={location.pathname === item.path}
+            disableRipple
+            disableTouchRipple
           >
             <ListItemIcon sx={{ color: 'inherit' }}>
               {item.icon}
@@ -139,6 +141,8 @@ const Navbar = () => {
                 button
                 onClick={() => handleMenuItemClick(item.path)}
                 selected={location.pathname === item.path}
+                disableRipple
+                disableTouchRipple
               >
                 <ListItemIcon sx={{ color: 'inherit' }}>
                   {item.icon}
@@ -154,6 +158,8 @@ const Navbar = () => {
                       onClick={() => handleMenuItemClick(child.path)}
                       selected={location.pathname + location.hash === child.path}
                       sx={{ pl: 4 }}
+                      disableRipple
+                      disableTouchRipple
                     >
                       <ListItemIcon sx={{ color: 'inherit' }}>
                         {child.icon}
@@ -180,6 +186,8 @@ const Navbar = () => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
+            disableRipple
+            disableTouchRipple
             sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
@@ -210,6 +218,8 @@ const Navbar = () => {
               <Button
                 key={item.title}
                 onClick={() => handleMenuItemClick(item.path)}
+                disableRipple
+                disableTouchRipple
                 sx={{ 
                   my: 2, 
                   color: 'text.primary', 
@@ -258,20 +268,20 @@ const Navbar = () => {
                   open={Boolean(anchorElUser)}
                   onClose={handleCloseUserMenu}
                 >
-                  <MenuItem onClick={() => handleMenuItemClick('/profile')}>
+                  <MenuItem onClick={() => handleMenuItemClick('/profile')} disableRipple disableTouchRipple>
                     <ListItemIcon>
                       <PersonIcon fontSize="small" />
                     </ListItemIcon>
                     <Typography textAlign="center">Profile</Typography>
                   </MenuItem>
-                  <MenuItem onClick={() => handleMenuItemClick('/my-list')}>
+                  <MenuItem onClick={() => handleMenuItemClick('/my-list')} disableRipple disableTouchRipple>
                     <ListItemIcon>
                       <ListIcon fontSize="small" />
                     </ListItemIcon>
                     <Typography textAlign="center">My Lists</Typography>
                   </MenuItem>
                   <Divider />
-                  <MenuItem onClick={handleLogout}>
+                  <MenuItem onClick={handleLogout} disableRipple disableTouchRipple>
                     <ListItemIcon>
                       <LogoutIcon fontSize="small" />
                     </ListItemIcon>

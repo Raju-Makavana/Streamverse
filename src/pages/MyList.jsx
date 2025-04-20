@@ -317,18 +317,24 @@ const MyList = () => {
               label="Favorites" 
               id="list-tab-0"
               aria-controls="list-tabpanel-0"
+              disableRipple
+              disableTouchRipple
             />
             <Tab 
               icon={<AccessTimeIcon />} 
               label="Watch Later" 
               id="list-tab-1"
               aria-controls="list-tabpanel-1"
+              disableRipple
+              disableTouchRipple
             />
             <Tab 
               icon={<HistoryIcon />} 
               label="History" 
               id="list-tab-2"
               aria-controls="list-tabpanel-2"
+              disableRipple
+              disableTouchRipple
             />
           </Tabs>
         </Box>

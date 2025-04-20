@@ -426,6 +426,8 @@ const MediaDetailsPage = () => {
               variant="contained"
               startIcon={<PlayArrow />}
               onClick={handlePlayClick}
+              disableRipple
+              disableTouchRipple
               sx={{
                 bgcolor: 'primary.main',
                 color: 'white',
@@ -446,6 +448,8 @@ const MediaDetailsPage = () => {
                 variant="outlined"
                 startIcon={userLists.inWatchLater ? <Bookmark /> : <BookmarkBorder />}
                 onClick={handleToggleWatchLater}
+                disableRipple
+                disableTouchRipple
                 sx={{
                   color: 'white',
                   borderColor: 'white',
@@ -466,6 +470,8 @@ const MediaDetailsPage = () => {
                 variant={userLists.inFavorites ? "contained" : "outlined"}
                 startIcon={<Favorite />}
                 onClick={handleToggleFavorites}
+                disableRipple
+                disableTouchRipple
                 color="error"
               >
                 {userLists.inFavorites ? "Remove from Favorites" : "Add to Favorites"}
@@ -477,6 +483,8 @@ const MediaDetailsPage = () => {
                 variant={isLiked ? "contained" : "outlined"}
                 startIcon={<ThumbUp />}
                 onClick={handleToggleLike}
+                disableRipple
+                disableTouchRipple
                 color="primary"
               >
                 {isLiked ? "Unlike" : "Like"} ({likeCount})
@@ -486,6 +494,8 @@ const MediaDetailsPage = () => {
             <Tooltip title="Share">
               <IconButton
                 onClick={handleShareClick}
+                disableRipple
+                disableTouchRipple
                 sx={{
                   color: 'white',
                   border: '1px solid white',

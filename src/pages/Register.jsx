@@ -13,7 +13,8 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { registerApi } from '../apis/generalApis';
-import  img from '../assets/content-2.jpg';
+import img from "../assets/Background.png";
+import logo from "../assets/StreamVerse.svg";
 import Swal from 'sweetalert2';
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
@@ -82,26 +83,52 @@ export default function Register() {
 
   return (
     <Box sx={{
-      display: 'flex',
-      height: '100vh',
+      position: 'relative',
+      minHeight: '100vh',
+      width: '100%',
       overflow: 'hidden',
-      width: '100%'
     }}>
-      {/* Left side - Form */}
+      {/* Background Image */}
       <Box sx={{
-        width: '50%',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
         height: '100%',
+        '& img': {
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        },
+      }}>
+        <img src={img} alt="Background" />
+      </Box>
+
+      {/* Content */}
+      <Box sx={{
+        position: 'relative',
+        zIndex: 1,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#000'
+        minHeight: '100vh',
+        padding: '20px',
       }}>
-        <Box sx={{ 
-          width: '100%',
-          maxWidth: '450px',
-          px: 3
-        }}>
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Paper
+          elevation={3}
+          sx={{
+            width: '100%',
+            maxWidth: '450px',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(10px)',
+            color: '#fff',
+            p: 4,
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 1, display:"flex", flexDirection:"column", alignItems: 'center' }}>
+            <img src={logo} alt="Logo" style={{ height: 50, marginBottom:10 }} />
+
             <Typography variant="h4" component="h1" sx={{ fontWeight: 600, color: '#fff' }}>
               Create Account
             </Typography>
@@ -298,66 +325,8 @@ export default function Register() {
               </Typography>
             </Box>
           </form>
-        </Box>
+        </Paper>
       </Box>
-
-      {/* Right side - Image */}
-      <Box sx={{
-        width: '50%',
-        height: '100%',
-        backgroundImage: `url(${img})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }} />
-
-      {/* Right Side - Image */}
-      {/* <Box
-        sx={{
-          flex: "0 0 50%",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage: `url(${img})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0, 0, 0, 0.3)",
-            },
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 40,
-            left: 40,
-            right: 40,
-            color: "#fff",
-            zIndex: 1,
-          }}
-        >
-          <Typography variant="h3" gutterBottom sx={{ fontWeight: "bold" }}>
-            Welcome Back!
-          </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.8 }}>
-            Sign in to continue your journey with us
-          </Typography>
-        </Box>
-      </Box> */}
-      
     </Box>
   );
 }

@@ -1,266 +1,75 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  Box,
-  Typography,
-  IconButton,
-  CircularProgress,
-  Button,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Box, Typography, IconButton, Button, Alert } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
   Info,
-  PlayArrow,
-  Add,
-  VolumeOff,
-  VolumeUp
+  PlayCircle,
+  Refresh,
 } from "@mui/icons-material";
-import {
-  getAllMediaApi,
-  getFeaturedMedia,
-  getLatestMedia,
-  getPopularMedia,
-  getSlidersApi,
-  getTrendingMedia,
-} from "../apis/mediaApis";
+import { useNavigate } from "react-router-dom";
+
+// Import components
 import { getMediaUrl } from "../config/getMediaUrl";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  getLatestMoviesApi,
+  getTrendingMoviesApi,
+  getSlidersApi,
+  getLatestTvShows,
+  getTrendingTvShows,
+} from "../apis/mediaApis";
 import MediaSlider from "../components/MediaSlider";
 import CustomLoader from "../components/CustomLoader";
-import { styled } from '@mui/material/styles';
-
-// Add styled components for better organization
-const HeroSection = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  width: '100%',
-  height: '85vh',
-  [theme.breakpoints.down('md')]: {
-    height: '70vh',
-  },
-  [theme.breakpoints.down('sm')]: {
-    height: '60vh',
-  },
-  marginBottom: theme.spacing(4),
-  overflow: 'hidden',
-}));
-
-const HeroOverlay = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)',
-  zIndex: 1,
-}));
-
-const HeroContent = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  zIndex: 2,
-  padding: theme.spacing(0, 4),
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(0, 2),
-  },
-}));
-
-const HeroTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 700,
-  marginBottom: theme.spacing(2),
-  fontSize: '3.5rem',
-  [theme.breakpoints.down('md')]: {
-    fontSize: '3rem',
-  },
-  [theme.breakpoints.down('sm')]: {
-    fontSize: '2rem',
-  },
-  color: theme.palette.common.white,
-  textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-}));
-
-const HeroDescription = styled(Typography)(({ theme }) => ({
-  fontSize: '1.1rem',
-  marginBottom: theme.spacing(4),
-  maxWidth: '600px',
-  color: theme.palette.common.white,
-  textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-  [theme.breakpoints.down('sm')]: {
-    fontSize: '1rem',
-  },
-}));
-
-const HeroActions = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  gap: theme.spacing(2),
-  marginBottom: theme.spacing(4),
-}));
-
-const PlayButton = styled(Button)(({ theme }) => ({
-  backgroundColor: theme.palette.primary.main,
-  color: theme.palette.common.white,
-  padding: theme.spacing(1.5, 4),
-  fontSize: '1.1rem',
-  fontWeight: 600,
-  '&:hover': {
-    backgroundColor: theme.palette.primary.dark,
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1, 3),
-    fontSize: '1rem',
-  },
-}));
-
-const InfoButton = styled(Button)(({ theme }) => ({
-  backgroundColor: 'rgba(109, 109, 110, 0.7)',
-  color: theme.palette.common.white,
-  padding: theme.spacing(1.5, 4),
-  fontSize: '1.1rem',
-  fontWeight: 600,
-  '&:hover': {
-    backgroundColor: 'rgba(109, 109, 110, 0.9)',
-  },
-  [theme.breakpoints.down('sm')]: {
-    padding: theme.spacing(1, 3),
-    fontSize: '1rem',
-  },
-}));
-
-const SliderNavButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  color: theme.palette.common.white,
-  zIndex: 3,
-  '&:hover': {
-    backgroundColor: theme.palette.primary.main,
-  },
-  '&.prev': {
-    left: theme.spacing(2),
-  },
-  '&.next': {
-    right: theme.spacing(2),
-  },
-}));
-
-const VolumeButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  bottom: theme.spacing(4),
-  right: theme.spacing(4),
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  color: theme.palette.common.white,
-  zIndex: 3,
-  '&:hover': {
-    backgroundColor: 'rgba(0,0,0,0.7)',
-  },
-}));
 
 export default function Home() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sliders, setSliders] = useState([]);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef(null);
-  const [mediaData, setMediaData] = useState({
-    latest: [],
-    trending: [],
-    popular: [],
-    featured: [],
-    sports: [],
-    news: [],
-    originals: []
+  const [content, setContent] = useState({
+    latestMovies: [],
+    trendingMovies: [],
+    latestShows: [],
+    trendingShows: [],
   });
 
+  // Fetch all data on component mount
   useEffect(() => {
-    fetchMovies();
-    fetchSliders();
+    fetchHomeData();
+    fetchHomeSliders();
   }, []);
 
-  useEffect(() => {
-    fetchAllMedia();
-  }, []);
-
-  const fetchAllMedia = async () => {
+  const fetchHomeSliders = async () => {
     try {
-      setLoading(true);
-      const [latestRes, trendingRes, popularRes, featuredRes] = await Promise.all([
-        getLatestMedia(),
-        getTrendingMedia(),
-        getPopularMedia(),
-        getFeaturedMedia()
-      ]);
-
-      setMediaData({
-        latest: latestRes?.data || [],
-        trending: trendingRes?.data || [],
-        popular: popularRes?.data || [],
-        featured: featuredRes?.data || [],
-        sports: popularRes?.data?.filter(item => item.type === 'sports') || [],
-        news: popularRes?.data?.filter(item => item.type === 'news') || [],
-        originals: featuredRes?.data?.filter(item => item.isOriginal) || []
-      });
-    } catch (error) {
-      console.error("Error fetching media:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSliders = async () => {
-    try {
-      setLoading(true);
-      const response = await getSlidersApi('home');
-
-      // Access the nested sliders array
+      const response = await getSlidersApi("home");
       if (response?.data?.sliders && Array.isArray(response.data.sliders)) {
-        const activeSliders = response.data.sliders;
-        setSliders(activeSliders);
+        setSliders(response.data.sliders);
       } else {
         console.error("Response structure is not as expected:", response);
-        setSliders([]); // Set empty array as fallback
+        setSliders([]);
       }
     } catch (error) {
-      console.error("Error fetching sliders:", error);
-      setSliders([]); // Set empty array on error
-    } finally {
-      setLoading(false);
+      console.error("Error fetching featured sliders:", error);
+      setSliders([]);
+      setError("Failed to load featured content");
     }
   };
 
-  const fetchMovies = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllMediaApi();
-      if (response && response.success) {
-        setMovies(response.data);
-      } else {
-        console.error("Failed to fetch movies:", response?.error);
-      }
-    } catch (error) {
-      console.error("Error fetching movies:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Auto-play banner slides
   useEffect(() => {
     if (!isAutoPlaying || sliders.length === 0) return;
 
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % sliders.length);
-    }, 8000);
+    }, 5000);
 
     return () => clearInterval(timer);
   }, [isAutoPlaying, sliders.length]);
 
+  // Banner navigation handlers
   const nextSlide = () => {
     if (sliders.length <= 1) return;
     setIsAutoPlaying(false);
@@ -273,207 +82,236 @@ export default function Home() {
     setCurrentSlide((prev) => (prev - 1 + sliders.length) % sliders.length);
   };
 
-  if(loading){
-    return <CustomLoader />;
-  }
+  // Fetch all content data
+  const fetchHomeData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const handlePlayClick = (mediaId) => {
-    navigate(`/media/${mediaId}/watch`);
-  };
+      // Fetch all content categories in parallel
+      const [
+        latestMoviesResponse,
+        trendingMoviesResponse,
+        latestShowsResponse,
+        trendingShowsResponse,
+      ] = await Promise.all([
+        getLatestMoviesApi(1, 10),
+        getTrendingMoviesApi(7, 10),
+        getLatestTvShows(1, 10),
+        getTrendingTvShows(7, 10),
+      ]);
 
-  const handleDetailsClick = (mediaId) => {
-    navigate(`/media/${mediaId}`);
-  };
+      // Check for errors in responses
+      if (!latestMoviesResponse.success) throw new Error("Failed to load latest movies");
+      if (!trendingMoviesResponse.success) throw new Error("Failed to load trending movies");
+      if (!latestShowsResponse.success) throw new Error("Failed to load latest shows");
+      if (!trendingShowsResponse.success) throw new Error("Failed to load trending shows");
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
+      // Update state with fetched data
+      setContent({
+        latestMovies: latestMoviesResponse.data,
+        trendingMovies: trendingMoviesResponse.data,
+        latestShows: latestShowsResponse.data,
+        trendingShows: trendingShowsResponse.data,
+      });
+    } catch (error) {
+      console.error("Error fetching home data:", error);
+      setError(error.message || "Failed to load content");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Get current featured item
-  const currentSlider = sliders[currentSlide] || {};
-  const mediaId = currentSlider?.mediaId?._id;
-  
+  // Navigate to media details
+  const navigateToMedia = (mediaId, mediaType) => {
+    navigate(`/media/${mediaId}?type=${mediaType}`);
+  };
+
+  // Loading state with animation
+  if (loading) {
+    return <CustomLoader message="Loading amazing content for you..." />;
+  }
+
+  // Error state with retry button
+  if (error) {
+    return (
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+          gap: 3,
+          px: 2,
+        }}
+      >
+        <Alert severity="error" sx={{ maxWidth: "sm", width: "100%" }}>
+          {error}
+        </Alert>
+        <Button
+          variant="contained"
+          startIcon={<Refresh />}
+          onClick={() => {
+            fetchHomeData();
+            fetchHomeSliders();
+          }}
+        >
+          Try Again
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
+    <motion.div
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      style={{ 
-        backgroundColor: '#141414',
-        minHeight: '100vh',
-        overflow: 'hidden'
-      }}
+      style={{ width: "100%", maxWidth: "100%", overflow: "hidden", minHeight: "100vh" }}
     >
       {/* Hero Section */}
-      <HeroSection>
+      <Box sx={{ position: "relative", height: "80vh", width: "100%", overflow: "hidden" }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-            style={{ position: 'absolute', inset: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{ position: "absolute", width: "100%", height: "100%" }}
           >
-            {currentSlider?.videoUrl ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                loop
-                muted={isMuted}
-                poster={getMediaUrl(currentSlider, "image")}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              >
-                <source src={currentSlider.videoUrl} type="video/mp4" />
-              </video>
-            ) : (
-              <Box
-                component="img"
-                src={getMediaUrl(currentSlider, "image")}
-                alt={currentSlider?.mediaId?.title || "Featured Content"}
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-            )}
-            
-            <HeroOverlay />
-            
-            <HeroContent>
-              <Box sx={{ maxWidth: { xs: '100%', md: '50%' } }}>
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                background: `linear-gradient(${
+                  sliders[currentSlide]?.backgroundColor || "rgba(0,0,0,0.5)"
+                }, rgba(0,0,0,0.8)), url(${
+                  getMediaUrl(sliders[currentSlide], 'image') || ''
+                })`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                display: "flex",
+                alignItems: "center",
+                px: { xs: 2, md: 6 },
+              }}
+            >
+              <Box sx={{ maxWidth: 600 }}>
                 <motion.div
-                  initial={{ y: 30, opacity: 0 }}
+                  initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.7 }}
+                  transition={{ delay: 0.2 }}
                 >
-                  <HeroTitle variant="h1">
-                    {currentSlider?.mediaId?.title}
-                  </HeroTitle>
-                  
-                  <HeroDescription variant="body1">
-                    {currentSlider?.mediaId?.plot}
-                  </HeroDescription>
-                  
-                  <HeroActions>
-                    <PlayButton
+                  <Typography variant="h2" component="h1" sx={{ mb: 3, color: "white" }}>
+                    {sliders[currentSlide]?.mediaId?.title || sliders[currentSlide]?.title || "Welcome to StreamVerse"}
+                  </Typography>
+                  <Typography variant="h5" sx={{ mb: 4, color: "rgba(255, 255, 255, 0.8)" }}>
+                    {sliders[currentSlide]?.mediaId?.overview || sliders[currentSlide]?.description || 
+                    "Discover the best movies and TV shows all in one place"}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
                       variant="contained"
-                      startIcon={<PlayArrow />}
-                      onClick={() => handlePlayClick(mediaId)}
+                      startIcon={<PlayCircle />}
+                      onClick={() => navigateToMedia(sliders[currentSlide]?.mediaId?._id, sliders[currentSlide]?.mediaType)}
+                      sx={{ px: 4 }}
                     >
-                      Play Now
-                    </PlayButton>
-                    
-                    <InfoButton
-                      variant="contained"
+                      Watch Now
+                    </Button>
+                    <Button
+                      variant="outlined"
                       startIcon={<Info />}
-                      onClick={() => handleDetailsClick(mediaId)}
+                      onClick={() => navigateToMedia(sliders[currentSlide]?.mediaId?._id, sliders[currentSlide]?.mediaType)}
+                      sx={{ px: 4, color: "white", borderColor: "white" }}
                     >
                       More Info
-                    </InfoButton>
-                  </HeroActions>
+                    </Button>
+                  </Box>
                 </motion.div>
               </Box>
-            </HeroContent>
+            </Box>
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Controls */}
+        {/* Slider Navigation */}
         {sliders.length > 1 && (
           <>
-            <SliderNavButton
+            <IconButton
               onClick={prevSlide}
-              className="prev"
-              aria-label="Previous slide"
+              sx={{
+                position: "absolute",
+                left: { xs: 8, md: 20 },
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "white",
+                bgcolor: "rgba(0,0,0,0.5)",
+                "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+              }}
             >
               <ChevronLeft />
-            </SliderNavButton>
-            
-            <SliderNavButton
+            </IconButton>
+            <IconButton
               onClick={nextSlide}
-              className="next"
-              aria-label="Next slide"
+              sx={{
+                position: "absolute",
+                right: { xs: 8, md: 20 },
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "white",
+                bgcolor: "rgba(0,0,0,0.5)",
+                "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+              }}
             >
               <ChevronRight />
-            </SliderNavButton>
+            </IconButton>
           </>
         )}
-
-        {/* Volume Control */}
-        {currentSlider?.videoUrl && (
-          <VolumeButton
-            onClick={toggleMute}
-            aria-label={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <VolumeOff /> : <VolumeUp />}
-          </VolumeButton>
-        )}
-      </HeroSection>
+      </Box>
 
       {/* Content Sections */}
-      <Box sx={{ px: { xs: 2, sm: 4 }, pb: 6 }}>
-        {mediaData.featured.length > 0 && (
-          <MediaSlider
-            title="Featured"
-            items={mediaData.featured}
-            sx={{ mb: 4 }}
-          />
+      <Box sx={{ px: { xs: 2, md: 6 }, py: 4 }}>
+        {/* Latest Movies */}
+        {content.latestMovies.length > 0 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: "white" }}>
+              Latest Movies
+            </Typography>
+            <MediaSlider items={content.latestMovies} onItemClick={(id) => navigateToMedia(id, 'movie')} />
+          </Box>
         )}
-        
-        {mediaData.trending.length > 0 && (
-          <MediaSlider
-            title="Trending Now"
-            items={mediaData.trending}
-            sx={{ mb: 4 }}
-          />
+
+        {/* Trending Movies */}
+        {content.trendingMovies.length > 0 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: "white" }}>
+              Trending Movies
+            </Typography>
+            <MediaSlider items={content.trendingMovies} onItemClick={(id) => navigateToMedia(id, 'movie')} />
+          </Box>
         )}
-        
-        {mediaData.latest.length > 0 && (
-          <MediaSlider
-            title="New Releases"
-            items={mediaData.latest}
-            sx={{ mb: 4 }}
-          />
+
+        {/* Latest TV Shows */}
+        {content.latestShows.length > 0 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: "white" }}>
+              Latest TV Shows
+            </Typography>
+            <MediaSlider items={content.latestShows} onItemClick={(id) => navigateToMedia(id, 'tv')} />
+          </Box>
         )}
-        
-        {mediaData.popular.length > 0 && (
-          <MediaSlider
-            title="Popular on Streamverse"
-            items={mediaData.popular}
-            sx={{ mb: 4 }}
-          />
-        )}
-        
-        {mediaData.originals.length > 0 && (
-          <MediaSlider
-            title="Streamverse Originals"
-            items={mediaData.originals}
-            sx={{ mb: 4 }}
-          />
-        )}
-        
-        {mediaData.sports.length > 0 && (
-          <MediaSlider
-            title="Sports"
-            items={mediaData.sports}
-            sx={{ mb: 4 }}
-          />
-        )}
-        
-        {mediaData.news.length > 0 && (
-          <MediaSlider
-            title="News"
-            items={mediaData.news}
-            sx={{ mb: 4 }}
-          />
+
+        {/* Trending TV Shows */}
+        {content.trendingShows.length > 0 && (
+          <Box sx={{ mb: 6 }}>
+            <Typography variant="h4" sx={{ mb: 3, color: "white" }}>
+              Trending TV Shows
+            </Typography>
+            <MediaSlider items={content.trendingShows} onItemClick={(id) => navigateToMedia(id, 'tv')} />
+          </Box>
         )}
       </Box>
     </motion.div>

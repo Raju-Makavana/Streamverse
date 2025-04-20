@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Box, IconButton, Typography, useMediaQuery, useTheme, Chip } from '@mui/material';
-import { ChevronLeft, ChevronRight, Star, SportsEsports, SportsCricket, SportsSoccer, SportsTennis, SportsBasketball } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Newspaper, Language, NewReleases, Public, LiveTv } from '@mui/icons-material';
 import { motion } from "framer-motion";
 import { getMediaUrl } from '../config/getMediaUrl';
 import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-const SportsMediaSlider = ({ title, items = [] }) => {
+const NewsMediaSlider = ({ title, items = [] }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,25 +45,23 @@ const SportsMediaSlider = ({ title, items = [] }) => {
   const canShowNext = currentIndex + itemsPerSlide < items.length;
   const canShowPrev = currentIndex > 0;
 
-  // Get appropriate sports icon based on genre
-  const getSportsIcon = (item) => {
-    if (!item.genres) return <SportsEsports />;
+  // Get appropriate news icon based on genre
+  const getNewsIcon = (item) => {
+    if (!item.genres) return <Newspaper />;
     
     const genre = item.genres.find(g => 
-      g.toLowerCase().includes('cricket') || 
-      g.toLowerCase().includes('football') || 
-      g.toLowerCase().includes('tennis') || 
-      g.toLowerCase().includes('basketball')
+      g.toLowerCase().includes('international') || 
+      g.toLowerCase().includes('national') || 
+      g.toLowerCase().includes('breaking')
     );
     
-    if (!genre) return <SportsEsports />;
+    if (!genre) return <Newspaper />;
     
-    if (genre.toLowerCase().includes('cricket')) return <SportsCricket />;
-    if (genre.toLowerCase().includes('football')) return <SportsSoccer />;
-    if (genre.toLowerCase().includes('tennis')) return <SportsTennis />;
-    if (genre.toLowerCase().includes('basketball')) return <SportsBasketball />;
+    if (genre.toLowerCase().includes('international')) return <Public />;
+    if (genre.toLowerCase().includes('breaking')) return <NewReleases />;
+    if (genre.toLowerCase().includes('national')) return <Language />;
     
-    return <SportsEsports />;
+    return <Newspaper />;
   };
 
   // Empty state component
@@ -83,9 +81,9 @@ const SportsMediaSlider = ({ title, items = [] }) => {
         maxWidth: '100%'
       }}
     >
-      <SportsEsports sx={{ fontSize: 48, color: 'grey.500', mb: 2 }} />
+      <Newspaper sx={{ fontSize: 48, color: 'grey.500', mb: 2 }} />
       <Typography variant="h6" color="grey.500" textAlign="center">
-        No sports content available at the moment
+        No news content available at the moment
       </Typography>
       <Typography variant="body2" color="grey.600" textAlign="center" sx={{ mt: 1 }}>
         Please check back later for updates
@@ -113,7 +111,7 @@ const SportsMediaSlider = ({ title, items = [] }) => {
           gap: 1
         }}
       >
-        <SportsEsports />
+        <Newspaper />
         {title}
       </Typography>
       
@@ -173,7 +171,7 @@ const SportsMediaSlider = ({ title, items = [] }) => {
                       minWidth: `calc(${100/itemsPerSlide}% - 16px)`,
                       maxWidth: `calc(${100/itemsPerSlide}% - 16px)`,
                       position: 'relative',
-                      aspectRatio: '2/3',
+                      aspectRatio: '16/9', // News typically has wider aspect ratio
                       borderRadius: 1,
                       overflow: 'hidden',
                       cursor: 'pointer',
@@ -194,23 +192,43 @@ const SportsMediaSlider = ({ title, items = [] }) => {
                         objectFit: 'cover',
                       }}
                     />
-                    {item.genres && item.genres[0] && (
-                      <Chip
-                        label={item.genres[0]}
-                        size="small"
-                        icon={getSportsIcon(item)}
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          backgroundColor: 'rgba(0,0,0,0.7)',
-                          color: 'white',
-                          '& .MuiChip-icon': {
-                            color: 'white'
-                          }
-                        }}
-                      />
-                    )}
+                    <Box sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      gap: 1
+                    }}>
+                      {item.isLive && (
+                        <Chip 
+                          icon={<LiveTv />}
+                          label="LIVE"
+                          size="small"
+                          sx={{
+                            backgroundColor: 'red',
+                            color: 'white',
+                            '& .MuiChip-icon': {
+                              color: 'white'
+                            }
+                          }}
+                        />
+                      )}
+                      {item.genres && item.genres[0] && (
+                        <Chip
+                          label={item.genres[0]}
+                          size="small"
+                          icon={getNewsIcon(item)}
+                          sx={{
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            color: 'white',
+                            '& .MuiChip-icon': {
+                              color: 'white'
+                            }
+                          }}
+                        />
+                      )}
+                    </Box>
                     <Box sx={{
                       position: 'absolute',
                       bottom: 0,
@@ -233,20 +251,11 @@ const SportsMediaSlider = ({ title, items = [] }) => {
                         alignItems: 'center', 
                         justifyContent: 'space-between'
                       }}>
-                        {item.imdb?.rating && (
-                          <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 0.5 
-                          }}>
-                            <Star sx={{ fontSize: 16, color: 'yellow' }} />
-                            <Typography variant="caption">
-                              {item.imdb.rating}/10
-                            </Typography>
-                          </Box>
-                        )}
                         <Typography variant="caption">
-                          {item.year || (item.released && new Date(item.released).getFullYear())}
+                          {item.languages && item.languages[0]}
+                        </Typography>
+                        <Typography variant="caption">
+                          {item.countries && item.countries[0]}
                         </Typography>
                       </Box>
                     </Box>
@@ -281,9 +290,9 @@ const SportsMediaSlider = ({ title, items = [] }) => {
   );
 };
 
-SportsMediaSlider.propTypes = {
+NewsMediaSlider.propTypes = {
   title: PropTypes.string.isRequired,
   items: PropTypes.array
 };
 
-export default SportsMediaSlider;
+export default NewsMediaSlider; 

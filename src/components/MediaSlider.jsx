@@ -60,15 +60,17 @@ const SliderTitle = styled(Typography)(({ theme }) => ({
 const SliderWrapper = styled(Box)(({ theme }) => ({
   display: 'flex',
   transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-  gap: theme.spacing(2),
+  gap: theme.spacing(1),
+  height: '320px',
 }));
 
 const SliderCard = styled(motion.div)(({ theme }) => ({
   position: 'relative',
-  borderRadius: theme.shape.borderRadius * 2,
+  borderRadius: theme.shape.borderRadius,
   overflow: 'hidden',
   cursor: 'pointer',
   height: '100%',
+  minWidth: 'auto',
   backgroundColor: theme.palette.background.paper,
   boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
   '&:hover': {
@@ -85,7 +87,7 @@ const CardImage = styled('img')({
   width: '100%',
   height: '100%',
   objectFit: 'cover',
-  aspectRatio: '16/9',
+  objectPosition: 'center top',
   display: 'block',
 });
 
@@ -393,7 +395,7 @@ const MediaSlider = ({ title, items = [], sx = {} }) => {
         <>
           <SliderWrapper
             sx={{
-              transform: `translateX(-${currentIndex * (100 / itemsPerSlide)}%)`,
+              transform: `translateX(-${currentIndex * (100 / itemsPerSlide)}%)`
             }}
           >
             {items.map((item, index) => (
@@ -401,10 +403,10 @@ const MediaSlider = ({ title, items = [], sx = {} }) => {
                 key={item._id}
                 onClick={() => handleCardClick(item._id)}
                 whileHover={{ scale: 1.02 }}
-                style={{ flex: `0 0 ${100 / itemsPerSlide}%` }}
+                style={{ flex: `0 0 ${100 / itemsPerSlide}%`, margin: '0 4px' }}
               >
                 <CardImage
-                  src={getMediaUrl(item.posterUrl, 'poster')}
+                  src={getMediaUrl(item.posterUrl || item, 'poster')}
                   alt={item.title}
                   loading="lazy"
                 />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, Button } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Info, PlayCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -83,6 +83,11 @@ export default function TVShows() {
     }
   };
 
+  const navigateToMedia = (mediaId, mediaType) => {
+    navigate(`/media/${mediaId}?type=${mediaType}`);
+  };
+  
+
   // Navigation handlers remain the same
   const nextSlide = () => {
     if (sliders.length <= 1) return;
@@ -145,29 +150,23 @@ export default function TVShows() {
                   <Typography variant="h6" sx={{ color: 'white', mb: 4, opacity: 0.9 }}>
                     {sliders[currentSlide]?.mediaId?.plot || 'No Description'}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <IconButton
-                      sx={{
-                        bgcolor: 'white',
-                        '&:hover': { bgcolor: 'white' },
-                        width: 48,
-                        height: 48
-                      }}
-                      onClick={() => navigate(`/watch/${sliders[currentSlide]?.mediaId?._id}`)}
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      startIcon={<PlayCircle />}
+                      onClick={() => navigateToMedia(sliders[currentSlide]?.mediaId?._id, sliders[currentSlide]?.mediaType)}
+                      sx={{ px: 4 }}
                     >
-                      <PlayCircle />
-                    </IconButton>
-                    <IconButton
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.3)',
-                        '&:hover': { bgcolor: 'rgba(255,255,255,0.4)' },
-                        width: 48,
-                        height: 48
-                      }}
-                      onClick={() => navigate(`/details/${sliders[currentSlide]?.mediaId?._id}`)}
+                      Watch Now
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<Info />}
+                      onClick={() => navigateToMedia(sliders[currentSlide]?.mediaId?._id, sliders[currentSlide]?.mediaType)}
+                      sx={{ px: 4, color: "white", borderColor: "white" }}
                     >
-                      <Info />
-                    </IconButton>
+                      More Info
+                    </Button>
                   </Box>
                 </motion.div>
               </Box>

@@ -55,13 +55,99 @@ const theme = createTheme({
     button: { fontWeight: 500 }
   },
   components: {
+    MuiButtonBase: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      },
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+          }
+        }
+      }
+    },
     MuiButton: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      },
       styleOverrides: {
         root: {
           borderRadius: 4,
           textTransform: 'none',
-          fontWeight: 500
+          fontWeight: 500,
+          '&:focus': {
+            outline: 'none',
+          }
         }
+      }
+    },
+    MuiIconButton: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      },
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+          }
+        }
+      }
+    },
+    MuiListItem: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiListItemButton: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiMenuItem: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiTab: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiAccordionSummary: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiSwitch: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiCheckbox: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiRadio: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiTableRow: {
+      defaultProps: {
+        hover: false
       }
     },
     MuiCard: {
@@ -73,10 +159,26 @@ const theme = createTheme({
       }
     },
     MuiChip: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      },
       styleOverrides: {
         root: {
           borderRadius: 4
         }
+      }
+    },
+    MuiLink: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
+      }
+    },
+    MuiSlider: {
+      defaultProps: {
+        disableRipple: true,
+        disableTouchRipple: true,
       }
     }
   }
